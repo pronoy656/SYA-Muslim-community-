@@ -19,8 +19,13 @@ const cinzel = Cinzel({
 });
 
 export const metadata: Metadata = {
-  title: "SYA Admin",
-  description: "Admin dashboard for SYA",
+  title: "SYA Muslim Community — Admin",
+  description: "Admin dashboard for the SYA Muslim Community platform",
+  icons: {
+    icon: "/SYA logo 1.png",
+    shortcut: "/SYA logo 1.png",
+    apple: "/SYA logo 1.png",
+  },
 };
 
 export default function RootLayout({

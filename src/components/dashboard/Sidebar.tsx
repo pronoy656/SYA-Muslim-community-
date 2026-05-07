@@ -195,9 +195,13 @@ export default function Sidebar({ active }: { active?: string }) {
   return (
     <aside className="h-screen w-64 bg-[#FCFAF8] text-slate-600 border-r border-slate-200 fixed left-0 top-0 flex flex-col font-cinzel">
       {/* Brand */}
-      <div className="p-6 pb-4 border-b border-slate-200/60 shrink-0">
-        <h1 className="text-2xl font-semibold text-[#D4AF37] uppercase tracking-wider">SYA ADMIN</h1>
-        <p className="text-xs text-slate-500 mt-1">Dashboard Panel</p>
+      <div className="p-4 pb-4 border-b border-slate-200/60 shrink-0 flex flex-col items-center">
+        <img
+          src="/SYA logo 1.png"
+          alt="SYA Logo"
+          className="h-20 w-auto object-contain"
+        />
+        <p className="text-xs text-slate-500 mt-2 tracking-wide">Dashboard Panel</p>
       </div>
 
       {/* Nav */}
