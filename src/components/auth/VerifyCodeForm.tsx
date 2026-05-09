@@ -1,8 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 
 export default function VerifyCodeForm() {
   const router = useRouter();
@@ -40,14 +38,14 @@ export default function VerifyCodeForm() {
   return (
     <div className="w-full">
       <div className="text-center mb-10">
-        <h1 className="text-3xl font-bold mb-2 text-slate-900">Verify Reset Password</h1>
-        <p className="text-slate-500">
-          Enter the code sent to your email to reset your password.
+        <h1 className="text-3xl font-bold mb-2 text-slate-800 font-cinzel uppercase tracking-wide">Verify Code</h1>
+        <p className="text-slate-500 font-sans text-sm">
+          Enter the 5-digit code sent to your email to reset your password.
         </p>
       </div>
 
       <form onSubmit={onSubmit} className="space-y-8">
-        <div className="flex justify-between gap-2">
+        <div className="flex justify-center gap-3 md:gap-4">
           {code.map((digit, index) => (
             <input
               key={index}
@@ -57,19 +55,25 @@ export default function VerifyCodeForm() {
               value={digit}
               onChange={(e) => handleChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
-              className="w-14 h-16 bg-slate-50 border border-slate-200 rounded-xl text-center text-2xl font-bold text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+              className="w-12 h-14 md:w-14 md:h-16 bg-[#FAF7F2] border border-[#E0D4BC] rounded-2xl text-center text-2xl font-bold text-slate-800 focus:border-[#C4A052] focus:ring-2 focus:ring-[#C4A052]/40 outline-none transition-all shadow-sm"
             />
           ))}
         </div>
 
-        <Button
+        <button
           type="submit"
-          variant="brand"
-          className="w-full h-12 text-base"
+          className="w-full py-4 text-base font-bold bg-[#C4A052] text-white rounded-2xl hover:bg-[#A8873A] transition-all shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed font-sans"
           disabled={loading}
         >
           {loading ? "Verifying..." : "Verify Code"}
-        </Button>
+        </button>
+
+        <div className="text-center text-sm text-slate-500 font-sans">
+          Didn't receive the code?{" "}
+          <button type="button" className="font-semibold text-[#C4A052] hover:text-[#A8873A] transition-colors">
+            Resend Code
+          </button>
+        </div>
       </form>
     </div>
   );
