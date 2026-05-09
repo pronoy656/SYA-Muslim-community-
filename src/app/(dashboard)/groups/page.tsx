@@ -51,9 +51,7 @@ function CreateGroupDialog({ onClose, onCreate }: {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
-  const [userType, setUserType] = useState<"All" | "Brothers" | "Sisters">("All");
-
-  const categories = ["Education", "Quran", "Networking", "Lifestyle", "Support", "Family", "Prayer", "Other"];
+  const [userType, setUserType] = useState<"Brothers" | "Sisters">("Brothers");
 
   const handleCreate = () => {
     if (!name.trim()) return;
@@ -113,23 +111,20 @@ function CreateGroupDialog({ onClose, onCreate }: {
           {/* Category */}
           <div className="space-y-2">
             <label className="text-sm font-semibold text-slate-700 block">Category</label>
-            <select
+            <input
+              type="text"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
+              placeholder="Enter category..."
               className={inputClass}
-            >
-              <option value="">Select a category...</option>
-              {categories.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
+            />
           </div>
 
           {/* User Type */}
           <div className="space-y-2">
             <label className="text-sm font-semibold text-slate-700 block">User Type</label>
-            <div className="grid grid-cols-3 gap-3">
-              {(["All", "Brothers", "Sisters"] as const).map((t) => (
+            <div className="grid grid-cols-2 gap-3">
+              {(["Brothers", "Sisters"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setUserType(t)}
@@ -138,9 +133,7 @@ function CreateGroupDialog({ onClose, onCreate }: {
                     userType === t
                       ? t === "Sisters"
                         ? "border-pink-400 bg-pink-50 text-pink-500"
-                        : t === "Brothers"
-                        ? "border-blue-400 bg-blue-50 text-blue-600"
-                        : "border-[#C4A052] bg-[#F4EFE6] text-[#C4A052]"
+                        : "border-blue-400 bg-blue-50 text-blue-600"
                       : "border-[#E0D4BC] bg-[#FAF7F2] text-slate-500 hover:border-[#C4A052]/50"
                   )}
                 >

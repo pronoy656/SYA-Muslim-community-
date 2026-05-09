@@ -230,18 +230,23 @@ function AddMosqueDialog({ onClose, onAdd }: {
               <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                 <Clock className="h-4 w-4 text-[#C4A052]" /> Prayer Times
               </label>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {PRAYER_LABELS.map(({ key, label }) => (
-                  <div key={key} className="space-y-1">
-                    <span className={cn(
-                      "block text-center text-[10px] font-bold px-2 py-0.5 rounded-lg font-sans",
+                  <div key={key} className={cn(
+                    "flex items-center p-1.5 rounded-xl border border-[#E0D4BC] bg-[#FAF7F2] focus-within:ring-2 focus-within:ring-[#C4A052]/40 focus-within:border-[#C4A052] transition-all",
+                    key === "isha" ? "sm:col-span-2 lg:col-span-1" : ""
+                  )}>
+                    <div className={cn(
+                      "w-[84px] shrink-0 text-center text-[10px] font-bold py-1.5 rounded-lg font-sans uppercase tracking-wider",
                       PRAYER_COLORS[key]
-                    )}>{label}</span>
+                    )}>
+                      {label}
+                    </div>
                     <input
                       type="time"
                       value={pt[key]}
                       onChange={e => setPt(prev => ({ ...prev, [key]: e.target.value }))}
-                      className="w-full px-2 py-2.5 rounded-xl border border-[#E0D4BC] bg-[#FAF7F2] text-slate-700 text-xs text-center focus:outline-none focus:ring-2 focus:ring-[#C4A052]/40 font-sans"
+                      className="flex-1 w-full min-w-0 bg-transparent text-slate-700 text-sm font-semibold focus:outline-none font-sans px-3 cursor-pointer"
                     />
                   </div>
                 ))}

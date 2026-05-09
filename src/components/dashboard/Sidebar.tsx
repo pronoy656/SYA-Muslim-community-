@@ -61,7 +61,7 @@ const navTree: NavItem[] = [
   { type: "leaf", href: "/nearby-mosques",   label: "Nearby Mosques",    Icon: MapPin },
   { type: "leaf", href: "/ask-imam-question", label: "Ask an Imam",   Icon: HelpCircle },
   { type: "leaf", href: "/notifications", label: "Push Notifications",Icon: Bell },
-  { type: "leaf", href: "/analytics",     label: "Analytics",         Icon: BarChart2 },
+  // { type: "leaf", href: "/analytics",     label: "Analytics",         Icon: BarChart2 },
 ];
 
 /* ── Helpers ────────────────────────────────────────────────────── */
