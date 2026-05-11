@@ -34,7 +34,7 @@ export default function LoginForm() {
             <input
               type="email"
               required
-              placeholder="admin@sya.app"
+              placeholder="example@email.com"
               className={inputClass}
             />
           </div>
