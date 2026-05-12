@@ -47,7 +47,7 @@ type NavItem = NavLeaf | NavGroup;
 const navTree: NavItem[] = [
   { type: "leaf", href: "/overview",               label: "Dashboard",             Icon: LayoutDashboard },
   { type: "leaf", href: "/users",                  label: "User Management",       Icon: Users },
-  { type: "leaf", href: "/verification-management",label: "Verification Management", Icon: ShieldCheck },
+  // { type: "leaf", href: "/verification-management",label: "Verification Management", Icon: ShieldCheck },
 
   { type: "leaf", href: "/groups", label: "Groups", Icon: FolderOpen },
 

@@ -9,12 +9,12 @@ import { cn } from "@/lib/utils";
 import axiosSecure from "@/lib/axiosSecure";
 import { toast } from "sonner";
 import UserStats from "@/components/dashboard/UserStats";
+import UserVerificationDetailModal from "@/components/dashboard/UserVerificationDetailModal";
 
 /* ── Types ─────────────────────────────────────────────────────── */
 type UserRole = "SUPER_ADMIN" | "ADMIN" | "BROTHER" | "SISTER";
 type UserStatus = "ACTIVE" | "PENDING" | "SUSPENDED";
 type DialogType = "details" | "suspend" | "delete" | "verify" | null;
-
 
 interface User {
   id: string;
@@ -73,71 +73,6 @@ function DialogUserHeader({ user, onClose }: { user: User; onClose: () => void }
         <X className="h-5 w-5" />
       </button>
     </div>
-  );
-}
-
-/* ── 1. Details Dialog ─────────────────────────────────────────── */
-function DetailsDialog({ user, onClose }: { user: User; onClose: () => void }) {
-  return (
-    <ModalBackdrop onClose={onClose}>
-      <DialogUserHeader user={user} onClose={onClose} />
-      <div className="px-8 py-6 space-y-4">
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">User Details</p>
-
-        <div className="space-y-3">
-          <div className="flex items-center gap-3 p-4 bg-[#FAF7F2] rounded-2xl">
-            <UserCircle className="h-5 w-5 text-[#C4A052] shrink-0" />
-            <div>
-              <p className="text-xs text-slate-400">Full Name</p>
-              <p className="text-sm font-semibold text-slate-800">{user.name}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 p-4 bg-[#FAF7F2] rounded-2xl">
-            <Mail className="h-5 w-5 text-[#C4A052] shrink-0" />
-            <div>
-              <p className="text-xs text-slate-400">Email Address</p>
-              <p className="text-sm font-semibold text-slate-800">{user.email}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 p-4 bg-[#FAF7F2] rounded-2xl">
-            <Calendar className="h-5 w-5 text-[#C4A052] shrink-0" />
-            <div>
-              <p className="text-xs text-slate-400">Joined</p>
-              <p className="text-sm font-semibold text-slate-800">{new Date(user.createdAt).toLocaleDateString()}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 p-4 bg-[#FAF7F2] rounded-2xl">
-            <BadgeCheck className="h-5 w-5 text-[#C4A052] shrink-0" />
-            <div>
-              <p className="text-xs text-slate-400">Status & Role</p>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className={cn(
-                  "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter",
-                  user.status === "ACTIVE" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"
-                )}>{user.status}</span>
-                <span className={cn(
-                  "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter",
-                  user.role === "BROTHER" ? "bg-blue-50 text-blue-600" : "bg-pink-50 text-pink-500"
-                )}>{user.role}</span>
-                {user.isVerified && (
-                  <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1 ml-1">
-                    <CheckCircle className="h-3.5 w-3.5" /> Verified
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="px-8 pb-6">
-        <button
-          onClick={onClose}
-          className="w-full py-3 text-sm font-semibold bg-[#C4A052] text-white rounded-2xl hover:bg-[#A8873A] transition-all"
-        >
-          Close
-        </button>
-      </div>
-    </ModalBackdrop>
   );
 }
 
@@ -365,7 +300,12 @@ export default function UsersTable() {
     <div className="space-y-6 pb-12 font-cinzel bg-[#FCFAF8] min-h-screen p-8">
       {/* ── Dialogs ── */}
       {selectedUser && dialogType === "details" && (
-        <DetailsDialog user={selectedUser} onClose={closeDialog} />
+        <UserVerificationDetailModal 
+          userId={selectedUser.id} 
+          isOpen={true} 
+          onClose={closeDialog} 
+          onActionSuccess={fetchUsers} 
+        />
       )}
       {selectedUser && dialogType === "suspend" && (
         <SuspendDialog user={selectedUser} onClose={closeDialog} onConfirm={handleSuspend} />
