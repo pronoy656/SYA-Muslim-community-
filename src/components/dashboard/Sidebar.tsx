@@ -187,10 +187,14 @@ function NavGroupItem({
   );
 }
 
+import { useAuth } from "@/providers/AuthProvider";
+import { LogOut } from "lucide-react";
+
 /* ── Sidebar ────────────────────────────────────────────────────── */
 export default function Sidebar({ active }: { active?: string }) {
   const pathname = usePathname();
   const current = active ?? pathname ?? "";
+  const { user, logout } = useAuth();
 
   return (
     <aside className="h-screen w-64 bg-[#FCFAF8] text-slate-600 border-r border-slate-200 fixed left-0 top-0 flex flex-col font-cinzel">
@@ -217,14 +221,30 @@ export default function Sidebar({ active }: { active?: string }) {
 
       {/* Admin profile */}
       <div className="p-4 border-t border-slate-200/60 shrink-0">
-        <div className="flex items-center gap-3 p-3 bg-[#F4EFE6] rounded-xl">
-          <Avatar className="h-10 w-10 bg-[#C4A052]">
-            <AvatarFallback className="bg-[#C4A052] text-white font-semibold">A</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col min-w-0">
-            <span className="text-sm font-bold text-slate-800 truncate">Admin User</span>
-            <span className="text-xs text-slate-500 truncate">admin@sya.app</span>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3 p-3 bg-[#F4EFE6] rounded-xl overflow-hidden">
+            <Avatar className="h-10 w-10 bg-[#C4A052]">
+              <AvatarFallback className="bg-[#C4A052] text-white font-semibold">
+                {user?.name?.charAt(0) || user?.email?.charAt(0) || "A"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-bold text-slate-800 truncate">
+                {user?.name || "Admin User"}
+              </span>
+              <span className="text-xs text-slate-500 truncate">
+                {user?.email || "admin@sya.app"}
+              </span>
+            </div>
           </div>
+          
+          <button 
+            onClick={logout}
+            className="flex items-center justify-center gap-2 w-full py-2.5 px-4 text-sm font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors font-sans"
+          >
+            <LogOut className="h-4 w-4" />
+            Logout
+          </button>
         </div>
       </div>
     </aside>
