@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Cinzel } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/providers/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
   },
 };
 
-import { AuthProvider } from "@/providers/AuthProvider";
+import { Toaster } from "sonner";
 
 export default function RootLayout({
   children,
@@ -41,7 +42,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${cinzel.variable} antialiased`}
       >
         <AuthProvider>
-          <TooltipProvider>{children}</TooltipProvider>
+          <TooltipProvider>
+            {children}
+            <Toaster position="top-right" richColors />
+          </TooltipProvider>
         </AuthProvider>
       </body>
     </html>

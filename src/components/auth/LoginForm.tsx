@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import axiosPublic from "@/lib/axios";
 import { useAuth } from "@/providers/AuthProvider";
 
+import { toast } from "sonner";
+
 export default function LoginForm() {
   const router = useRouter();
   const { login } = useAuth();
@@ -27,22 +29,33 @@ export default function LoginForm() {
     setLoading(true);
     setError(null);
 
+    const loginPromise = axiosPublic.post("/auth/login", formData);
+
+    toast.promise(loginPromise, {
+      loading: 'Authenticating...',
+      success: (response) => {
+        const data = response.data?.data || response.data;
+        const token = data?.token || data?.accessToken || data?.access_token;
+        const userData = data?.user || {};
+        
+        if (token) {
+          login(token, userData);
+          return "Login successful!";
+        } else {
+          throw new Error("Token not found in response");
+        }
+      },
+      error: (err) => {
+        const msg = err.response?.data?.message || err.message || "Authentication failed";
+        setError(msg);
+        return msg;
+      },
+    });
+
     try {
-      const response = await axiosPublic.post("/auth/login", formData);
-      console.log("Login API Response:", response.data);
-      
-      const data = response.data?.data || response.data;
-      const token = data?.token || data?.accessToken || data?.access_token;
-      const userData = data?.user || {};
-      
-      if (token) {
-        login(token, userData);
-      } else {
-        setError("Invalid response from server: Token not found");
-      }
-    } catch (err: any) {
-      console.error("Login error:", err);
-      setError(err.response?.data?.message || "Authentication failed. Please try again.");
+      await loginPromise;
+    } catch (err) {
+      // Handled by toast.promise
     } finally {
       setLoading(false);
     }

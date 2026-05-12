@@ -4,16 +4,44 @@ import { useState } from "react";
 import Link from "next/link";
 import { Mail, ArrowLeft } from "lucide-react";
 
+import axiosPublic from "@/lib/axios";
+
+import { toast } from "sonner";
+
 export default function ResetEmailForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      router.push("/verify");
-    }, 600);
+    setError(null);
+
+    const promise = axiosPublic.post("/auth/forgot-password", { email });
+
+    toast.promise(promise, {
+      loading: 'Sending reset code...',
+      success: () => {
+        sessionStorage.setItem("resetEmail", email);
+        router.push("/verify");
+        return "Reset code sent to your email!";
+      },
+      error: (err) => {
+        const msg = err.response?.data?.message || "Failed to send reset link";
+        setError(msg);
+        return msg;
+      }
+    });
+
+    try {
+      await promise;
+    } catch (err) {
+      // Handled by toast
+    } finally {
+      setLoading(false);
+    }
   }
 
   const inputClass = "w-full pl-11 pr-4 py-3.5 rounded-2xl border border-[#E0D4BC] bg-[#FAF7F2] text-slate-800 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C4A052]/40 focus:border-[#C4A052] transition-all font-sans";
@@ -24,6 +52,13 @@ export default function ResetEmailForm() {
         <h1 className="text-3xl font-bold mb-2 text-slate-800 font-cinzel uppercase tracking-wide">Forgot Password</h1>
         <p className="text-slate-500 font-sans text-sm">Enter your email to receive a reset code</p>
       </div>
+
+      {error && (
+        <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium">
+          {error}
+        </div>
+      )}
+
       <form onSubmit={onSubmit} className="space-y-6">
         <div className="space-y-2 text-left">
           <label className="text-sm font-semibold text-slate-700 font-sans block">Email Address</label>
@@ -32,6 +67,8 @@ export default function ResetEmailForm() {
             <input
               type="email"
               required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@sya.app"
               className={inputClass}
             />

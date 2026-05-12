@@ -4,6 +4,9 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { toast } from "sonner";
+import { useAuth } from "@/providers/AuthProvider";
+import ChangePasswordModal from "./ChangePasswordModal";
 import {
   LayoutDashboard,
   Users,
@@ -18,6 +21,8 @@ import {
   FolderOpen,
   Layers,
   LucideIcon,
+  LogOut,
+  Lock,
 } from "lucide-react";
 
 /* ── Types ──────────────────────────────────────────────────────── */
@@ -187,14 +192,12 @@ function NavGroupItem({
   );
 }
 
-import { useAuth } from "@/providers/AuthProvider";
-import { LogOut } from "lucide-react";
-
 /* ── Sidebar ────────────────────────────────────────────────────── */
 export default function Sidebar({ active }: { active?: string }) {
   const pathname = usePathname();
   const current = active ?? pathname ?? "";
   const { user, logout } = useAuth();
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   return (
     <aside className="h-screen w-64 bg-[#FCFAF8] text-slate-600 border-r border-slate-200 fixed left-0 top-0 flex flex-col font-cinzel">
@@ -222,13 +225,13 @@ export default function Sidebar({ active }: { active?: string }) {
       {/* Admin profile */}
       <div className="p-4 border-t border-slate-200/60 shrink-0">
         <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-3 p-3 bg-[#F4EFE6] rounded-xl overflow-hidden">
+          <div className="flex items-center gap-3 p-3 bg-[#F4EFE6] rounded-xl overflow-hidden relative group">
             <Avatar className="h-10 w-10 bg-[#C4A052]">
               <AvatarFallback className="bg-[#C4A052] text-white font-semibold">
                 {user?.name?.charAt(0) || user?.email?.charAt(0) || "A"}
               </AvatarFallback>
             </Avatar>
-            <div className="flex flex-col min-w-0">
+            <div className="flex flex-col min-w-0 flex-1">
               <span className="text-sm font-bold text-slate-800 truncate">
                 {user?.name || "Admin User"}
               </span>
@@ -236,10 +239,20 @@ export default function Sidebar({ active }: { active?: string }) {
                 {user?.email || "admin@sya.app"}
               </span>
             </div>
+            <button 
+              onClick={() => setIsChangePasswordOpen(true)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-white/50 rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-white text-[#C4A052]"
+              title="Change Password"
+            >
+              <Lock className="h-3.5 w-3.5" />
+            </button>
           </div>
           
           <button 
-            onClick={logout}
+            onClick={() => {
+              logout();
+              toast.success("Logged out successfully");
+            }}
             className="flex items-center justify-center gap-2 w-full py-2.5 px-4 text-sm font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors font-sans"
           >
             <LogOut className="h-4 w-4" />
@@ -247,6 +260,11 @@ export default function Sidebar({ active }: { active?: string }) {
           </button>
         </div>
       </div>
+
+      <ChangePasswordModal 
+        isOpen={isChangePasswordOpen} 
+        onClose={() => setIsChangePasswordOpen(false)} 
+      />
     </aside>
   );
 }

@@ -31,7 +31,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } else {
       // If not on an auth page and no token, redirect to login
-      const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/reset") || pathname.startsWith("/verify");
+      const isAuthPage = 
+        pathname.startsWith("/login") || 
+        pathname.startsWith("/reset") || 
+        pathname.startsWith("/verify") || 
+        pathname.startsWith("/new-password");
+      
       if (!isAuthPage && pathname !== "/") {
         router.push("/login");
       }
