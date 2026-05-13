@@ -23,6 +23,7 @@ import {
   LucideIcon,
   LogOut,
   Lock,
+  Scale,
 } from "lucide-react";
 
 /* ── Types ──────────────────────────────────────────────────────── */
@@ -66,6 +67,7 @@ const navTree: NavItem[] = [
   { type: "leaf", href: "/nearby-mosques",   label: "Nearby Mosques",    Icon: MapPin },
   { type: "leaf", href: "/ask-imam-question", label: "Ask an Imam",   Icon: HelpCircle },
   { type: "leaf", href: "/notifications", label: "Push Notifications",Icon: Bell },
+  { type: "leaf", href: "/legal", label: "Legal Documents", Icon: Scale },
   // { type: "leaf", href: "/analytics",     label: "Analytics",         Icon: BarChart2 },
 ];
 
