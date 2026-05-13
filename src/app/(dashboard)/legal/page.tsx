@@ -145,7 +145,7 @@ export default function LegalPage() {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto min-h-[400px]">
+        <div className="overflow-x-auto">
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
               <Loader2 className="h-8 w-8 text-[#C4A052] animate-spin" />
@@ -159,7 +159,7 @@ export default function LegalPage() {
               <TableHeader className="bg-[#FAF7F2]">
                 <TableRow className="border-[#EAE3D5] hover:bg-transparent">
                   <TableHead className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] py-6 pl-10">Title</TableHead>
-                  <TableHead className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] py-6">Slug / Key</TableHead>
+                  <TableHead className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] py-6">Slug</TableHead>
                   <TableHead className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] py-6">Status</TableHead>
                   <TableHead className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] py-6 text-right pr-10">Actions</TableHead>
                 </TableRow>
