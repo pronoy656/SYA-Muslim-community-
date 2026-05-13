@@ -26,10 +26,10 @@ interface Khutbah {
 
 type FilterTab = "All Khutbahs" | "This Month";
 
-const formatDuration = (minutes: number) => {
-  if (!minutes) return "0:00";
-  const mins = Math.floor(minutes);
-  const secs = Math.round((minutes - mins) * 60);
+const formatDuration = (totalSeconds: number) => {
+  if (!totalSeconds) return "0:00";
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = Math.round(totalSeconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
@@ -90,6 +90,8 @@ function KhutbahDialog({ onClose, onSave, editingItem }: {
   const handleSave = async () => {
     try {
       setIsSubmitting(true);
+      console.log("Audio Duration before append:", duration);
+      
       const formData = new FormData();
       formData.append("title", title);
       formData.append("mosqueName", mosqueName);
@@ -101,15 +103,23 @@ function KhutbahDialog({ onClose, onSave, editingItem }: {
       if (audioFile) formData.append("audio", audioFile);
       if (thumbnailFile) formData.append("thumbnail", thumbnailFile);
 
+      console.log("--- Sending FormData ---");
+      for (const [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
+      console.log("------------------------");
+
       if (editingItem) {
-        await axiosSecure.patch(`/khutba/${editingItem.id}`, formData, {
+        const response = await axiosSecure.patch(`/khutba/${editingItem.id}`, formData, {
           headers: { "Content-Type": "multipart/form-data" }
         });
+        console.log("PATCH Response Data:", response.data);
         toast.success("Khutbah updated successfully");
       } else {
-        await axiosSecure.post("/khutba", formData, {
+        const response = await axiosSecure.post("/khutba", formData, {
           headers: { "Content-Type": "multipart/form-data" }
         });
+        console.log("POST Response Data:", response.data);
         toast.success("Khutbah created successfully");
       }
       onSave();
@@ -177,7 +187,7 @@ function KhutbahDialog({ onClose, onSave, editingItem }: {
              <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-[#C4A052]" /> Duration (min)
+                  <Clock className="h-4 w-4 text-[#C4A052]" /> Duration (sec)
                 </label>
                 {duration && (
                   <span className="text-[10px] font-mono text-[#C4A052] bg-[#C4A052]/10 px-2 py-0.5 rounded-full">
@@ -185,7 +195,7 @@ function KhutbahDialog({ onClose, onSave, editingItem }: {
                   </span>
                 )}
               </div>
-              <input type="number" step="0.01" value={duration} onChange={e => setDuration(e.target.value)} placeholder="e.g. 45" className={inputClass} />
+              <input type="number" step="1" value={duration} onChange={e => setDuration(e.target.value)} placeholder="e.g. 2400" className={inputClass} />
             </div>
           </div>
 
@@ -224,8 +234,8 @@ function KhutbahDialog({ onClose, onSave, editingItem }: {
                       const audio = document.createElement('audio');
                       audio.src = URL.createObjectURL(file);
                       audio.onloadedmetadata = () => {
-                        const durationInMinutes = audio.duration / 60;
-                        setDuration(durationInMinutes.toFixed(2));
+                        const durationInSeconds = audio.duration;
+                        setDuration(Math.round(durationInSeconds).toString());
                         URL.revokeObjectURL(audio.src);
                       };
                     }
