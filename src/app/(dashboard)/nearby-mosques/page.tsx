@@ -1,12 +1,14 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import {
   Plus, X, MapPin, Phone, Globe, Clock,
   Edit2, Trash2, AlertTriangle, Search,
-  Navigation, ExternalLink,
+  Navigation, ExternalLink, Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import axiosSecure from "@/lib/axiosSecure";
+import { toast } from "sonner";
 
 // Load map only on client side (no SSR)
 const MapPicker = dynamic(() => import("@/components/MapPicker"), { ssr: false });
@@ -17,28 +19,25 @@ interface PrayerTimes {
   asr: string;
   maghrib: string;
   isha: string;
+  jummah?: string;
+  [key: string]: string | undefined;
 }
 
 interface Mosque {
   id: string;
-  name: string;
+  mosqueName: string;
   address: string;
   area: string;
-  lat?: number;
-  lng?: number;
-  phone?: string;
+  phoneNumber?: string;
   website?: string;
+  location?: {
+      type: "Point";
+      coordinates: [number, number]; // [lng, lat]
+  };
   prayerTimes: PrayerTimes;
+  createdAt?: string;
+  updatedAt?: string;
 }
-
-const initialMosques: Mosque[] = [
-  { id: "1", name: "Central Masjid",      address: "12 Mosque Lane, City Centre", area: "City Centre", lat: 51.5074, lng: -0.1278, phone: "+44 20 1234 5678", website: "https://centralmasjid.org",   prayerTimes: { fajr: "05:15", dhuhr: "13:00", asr: "16:30", maghrib: "19:45", isha: "21:15" } },
-  { id: "2", name: "Green Dome Mosque",   address: "45 Oak Street, Northside",    area: "Northside",   lat: 51.5155, lng: -0.0922, phone: "+44 20 9876 5432", website: "https://greendomemasjid.org", prayerTimes: { fajr: "05:10", dhuhr: "13:05", asr: "16:35", maghrib: "19:50", isha: "21:20" } },
-  { id: "3", name: "Noor Islamic Center", address: "78 Rose Avenue, Eastside",    area: "Eastside",    lat: 51.5200, lng: -0.0500, phone: "+44 20 5555 4444", website: "",                           prayerTimes: { fajr: "05:20", dhuhr: "13:00", asr: "16:25", maghrib: "19:40", isha: "21:10" } },
-  { id: "4", name: "Al-Rahma Masjid",     address: "22 Maple Road, Westside",     area: "Westside",    lat: 51.4900, lng: -0.2100, phone: "",                  website: "https://alrahma.org",        prayerTimes: { fajr: "05:18", dhuhr: "13:02", asr: "16:32", maghrib: "19:48", isha: "21:18" } },
-  { id: "5", name: "Masjid Al-Noor",      address: "5 Birch Close, Southside",    area: "Southside",   lat: 51.4700, lng: -0.1100, phone: "+44 20 7777 8888", website: "https://masjidalnoor.co.uk",  prayerTimes: { fajr: "05:12", dhuhr: "13:08", asr: "16:38", maghrib: "19:52", isha: "21:22" } },
-  { id: "6", name: "Baitul Islam Mosque", address: "99 Pine Street, Riverside",   area: "Riverside",                              phone: "+44 20 3333 2222", website: "",                           prayerTimes: { fajr: "05:22", dhuhr: "13:10", asr: "16:40", maghrib: "19:55", isha: "21:25" } },
-];
 
 const PRAYER_LABELS = [
   { key: "fajr",    label: "Fajr" },
@@ -46,6 +45,7 @@ const PRAYER_LABELS = [
   { key: "asr",    label: "Asr" },
   { key: "maghrib",label: "Maghrib" },
   { key: "isha",   label: "Isha" },
+  { key: "jummah", label: "Jummah" },
 ] as const;
 
 const PRAYER_COLORS: Record<string, string> = {
@@ -54,14 +54,15 @@ const PRAYER_COLORS: Record<string, string> = {
   asr:     "bg-orange-50 text-orange-500",
   maghrib: "bg-rose-50 text-rose-500",
   isha:    "bg-indigo-50 text-indigo-600",
+  jummah:  "bg-emerald-50 text-emerald-600",
 };
 
 /* ── Shared input style ─────────────────────────────────────────── */
 const inputClass = "w-full px-4 py-3 rounded-2xl border border-[#E0D4BC] bg-[#FAF7F2] text-slate-800 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C4A052]/40 focus:border-[#C4A052] transition-all font-sans";
 
 /* ── Delete Dialog ─────────────────────────────────────────────── */
-function DeleteDialog({ name, onClose, onConfirm }: {
-  name: string; onClose: () => void; onConfirm: () => void;
+function DeleteDialog({ name, onClose, onConfirm, isDeleting }: {
+  name: string; onClose: () => void; onConfirm: () => void; isDeleting: boolean;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
@@ -78,7 +79,10 @@ function DeleteDialog({ name, onClose, onConfirm }: {
         </div>
         <div className="px-8 pb-8 flex gap-3">
           <button onClick={onClose} className="flex-1 py-3 text-sm font-semibold border border-[#EAE3D5] rounded-2xl text-slate-600 hover:bg-[#FAF7F2] transition-all">Cancel</button>
-          <button onClick={onConfirm} className="flex-1 py-3 text-sm font-semibold bg-red-500 text-white rounded-2xl hover:bg-red-600 transition-all">Yes, Delete</button>
+          <button onClick={onConfirm} disabled={isDeleting} className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold bg-red-500 text-white rounded-2xl hover:bg-red-600 transition-all disabled:opacity-50">
+            {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
+            {isDeleting ? "Deleting..." : "Yes, Delete"}
+          </button>
         </div>
       </div>
     </div>
@@ -113,33 +117,61 @@ function MapModal({ onClose, onSelect }: {
   );
 }
 
-/* ── Add Mosque Dialog ─────────────────────────────────────────── */
-function AddMosqueDialog({ onClose, onAdd }: {
+/* ── Add/Edit Mosque Dialog ─────────────────────────────────────────── */
+function MosqueDialog({ onClose, onSave, editingItem }: {
   onClose: () => void;
-  onAdd: (m: Mosque) => void;
+  onSave: () => void;
+  editingItem?: Mosque | null;
 }) {
-  const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
-  const [area, setArea] = useState("");
-  const [lat, setLat] = useState<number | null>(null);
-  const [lng, setLng] = useState<number | null>(null);
+  const [mosqueName, setMosqueName] = useState(editingItem?.mosqueName || "");
+  const [address, setAddress] = useState(editingItem?.address || "");
+  const [area, setArea] = useState(editingItem?.area || "");
+  const [lat, setLat] = useState<number | null>(editingItem?.location?.coordinates?.[1] ?? null);
+  const [lng, setLng] = useState<number | null>(editingItem?.location?.coordinates?.[0] ?? null);
   const [showMap, setShowMap] = useState(false);
-  const [phone, setPhone] = useState("");
-  const [website, setWebsite] = useState("");
-  const [pt, setPt] = useState<PrayerTimes>({ fajr: "", dhuhr: "", asr: "", maghrib: "", isha: "" });
+  const [phone, setPhone] = useState(editingItem?.phoneNumber || "");
+  const [website, setWebsite] = useState(editingItem?.website || "");
+  const [pt, setPt] = useState<PrayerTimes>(
+    editingItem?.prayerTimes || { fajr: "", dhuhr: "", asr: "", maghrib: "", isha: "", jummah: "" }
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canSubmit = name.trim() && address.trim() && area.trim();
+  const canSubmit = mosqueName.trim() && address.trim() && area.trim();
 
-  const handleAdd = () => {
+  const handleSave = async () => {
     if (!canSubmit) return;
-    onAdd({
-      id: Date.now().toString(),
-      name: name.trim(), address: address.trim(), area: area.trim(),
-      lat: lat ?? undefined, lng: lng ?? undefined,
-      phone: phone.trim(), website: website.trim(),
-      prayerTimes: pt,
-    });
-    onClose();
+    setIsSubmitting(true);
+    try {
+      const payload: any = {
+        mosqueName: mosqueName.trim(),
+        address: address.trim(),
+        area: area.trim(),
+        phoneNumber: phone.trim() || undefined,
+        website: website.trim() || undefined,
+        prayerTimes: pt,
+      };
+
+      if (lat != null && lng != null) {
+        payload.location = {
+          type: "Point",
+          coordinates: [lng, lat],
+        };
+      }
+
+      if (editingItem) {
+        await axiosSecure.patch(`/mosques/${editingItem.id}`, payload);
+        toast.success("Mosque updated successfully");
+      } else {
+        await axiosSecure.post("/mosques", payload);
+        toast.success("Mosque created successfully");
+      }
+      onSave();
+      onClose();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to save mosque");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -158,8 +190,12 @@ function AddMosqueDialog({ onClose, onAdd }: {
           {/* Header */}
           <div className="px-8 pt-7 pb-3 flex items-start justify-between shrink-0">
             <div>
-              <h2 className="text-xl font-bold text-slate-800 font-cinzel tracking-wide">Add Mosque</h2>
-              <p className="text-xs text-slate-400 mt-1">Add a new mosque to the directory</p>
+              <h2 className="text-xl font-bold text-slate-800 font-cinzel tracking-wide">
+                {editingItem ? "Edit Mosque" : "Add Mosque"}
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">
+                {editingItem ? "Update details for the mosque" : "Add a new mosque to the directory"}
+              </p>
             </div>
             <button onClick={onClose} className="text-slate-300 hover:text-slate-500 ml-4 shrink-0"><X className="h-5 w-5" /></button>
           </div>
@@ -172,7 +208,7 @@ function AddMosqueDialog({ onClose, onAdd }: {
               <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-[#C4A052]" /> Mosque Name <span className="text-red-400">*</span>
               </label>
-              <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Central Masjid" className={inputClass} />
+              <input value={mosqueName} onChange={e => setMosqueName(e.target.value)} placeholder="e.g. Central Masjid" className={inputClass} />
             </div>
 
             {/* Address */}
@@ -233,8 +269,7 @@ function AddMosqueDialog({ onClose, onAdd }: {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {PRAYER_LABELS.map(({ key, label }) => (
                   <div key={key} className={cn(
-                    "flex items-center p-1.5 rounded-xl border border-[#E0D4BC] bg-[#FAF7F2] focus-within:ring-2 focus-within:ring-[#C4A052]/40 focus-within:border-[#C4A052] transition-all",
-                    key === "isha" ? "sm:col-span-2 lg:col-span-1" : ""
+                    "flex items-center p-1.5 rounded-xl border border-[#E0D4BC] bg-[#FAF7F2] focus-within:ring-2 focus-within:ring-[#C4A052]/40 focus-within:border-[#C4A052] transition-all"
                   )}>
                     <div className={cn(
                       "w-[84px] shrink-0 text-center text-[10px] font-bold py-1.5 rounded-lg font-sans uppercase tracking-wider",
@@ -244,7 +279,7 @@ function AddMosqueDialog({ onClose, onAdd }: {
                     </div>
                     <input
                       type="time"
-                      value={pt[key]}
+                      value={pt[key] || ""}
                       onChange={e => setPt(prev => ({ ...prev, [key]: e.target.value }))}
                       className="flex-1 w-full min-w-0 bg-transparent text-slate-700 text-sm font-semibold focus:outline-none font-sans px-3 cursor-pointer"
                     />
@@ -258,11 +293,12 @@ function AddMosqueDialog({ onClose, onAdd }: {
           <div className="px-8 pb-7 pt-4 flex gap-3 shrink-0 border-t border-[#EAE3D5]">
             <button onClick={onClose} className="flex-1 py-3.5 text-sm font-semibold border border-[#EAE3D5] rounded-2xl text-slate-600 hover:bg-[#FAF7F2] transition-all">Cancel</button>
             <button
-              onClick={handleAdd}
-              disabled={!canSubmit}
-              className="flex-1 py-3.5 text-sm font-semibold bg-[#C4A052] text-white rounded-2xl hover:bg-[#A8873A] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+              onClick={handleSave}
+              disabled={!canSubmit || isSubmitting}
+              className="flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-semibold bg-[#C4A052] text-white rounded-2xl hover:bg-[#A8873A] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
             >
-              Add Mosque
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {editingItem ? "Update Mosque" : "Add Mosque"}
             </button>
           </div>
         </div>
@@ -272,10 +308,14 @@ function AddMosqueDialog({ onClose, onAdd }: {
 }
 
 /* ── Mosque Card ───────────────────────────────────────────────── */
-function MosqueCard({ mosque, onDelete }: {
+function MosqueCard({ mosque, onDelete, onEdit }: {
   mosque: Mosque;
   onDelete: () => void;
+  onEdit: () => void;
 }) {
+  const lng = mosque.location?.coordinates?.[0];
+  const lat = mosque.location?.coordinates?.[1];
+
   return (
     <div className="bg-white border border-[#EAE3D5] rounded-3xl shadow-sm hover:shadow-md transition-all overflow-hidden">
       <div className="h-1.5 bg-gradient-to-r from-[#C4A052] to-[#E8C97A]" />
@@ -289,7 +329,7 @@ function MosqueCard({ mosque, onDelete }: {
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-800 font-cinzel uppercase tracking-wide leading-snug">
-                {mosque.name}
+                {mosque.mosqueName}
               </h3>
               <span className="inline-flex items-center mt-1 px-2.5 py-0.5 bg-[#F4EFE6] text-[#C4A052] text-[10px] font-semibold rounded-lg font-sans">
                 {mosque.area}
@@ -305,10 +345,10 @@ function MosqueCard({ mosque, onDelete }: {
 
         {/* Contact row */}
         <div className="flex items-center gap-3 mb-5 flex-wrap">
-          {mosque.phone && (
-            <a href={`tel:${mosque.phone}`} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-[#C4A052] transition-colors font-sans">
+          {mosque.phoneNumber && (
+            <a href={`tel:${mosque.phoneNumber}`} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-[#C4A052] transition-colors font-sans">
               <Phone className="h-3.5 w-3.5" />
-              {mosque.phone}
+              {mosque.phoneNumber}
             </a>
           )}
           {mosque.website && (
@@ -319,9 +359,9 @@ function MosqueCard({ mosque, onDelete }: {
               <ExternalLink className="h-2.5 w-2.5" />
             </a>
           )}
-          {mosque.lat != null && mosque.lng != null && (
+          {lat != null && lng != null && (
             <a
-              href={`https://www.google.com/maps?q=${mosque.lat},${mosque.lng}`}
+              href={`https://www.google.com/maps?q=${lat},${lng}`}
               target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-[#C4A052] transition-colors font-sans"
             >
@@ -332,12 +372,12 @@ function MosqueCard({ mosque, onDelete }: {
         </div>
 
         {/* Prayer Times grid */}
-        <div className="grid grid-cols-5 gap-1.5 mb-5">
+        <div className="grid grid-cols-3 gap-1.5 mb-5">
           {PRAYER_LABELS.map(({ key, label }) => (
             <div key={key} className={cn("rounded-xl p-2 text-center", PRAYER_COLORS[key].split(" ")[0])}>
               <p className={cn("text-[9px] font-bold uppercase tracking-wide font-sans", PRAYER_COLORS[key].split(" ")[1])}>{label}</p>
               <p className={cn("text-[11px] font-semibold mt-0.5 font-sans", PRAYER_COLORS[key].split(" ")[1])}>
-                {mosque.prayerTimes[key] || "—"}
+                {mosque.prayerTimes?.[key] || "—"}
               </p>
             </div>
           ))}
@@ -345,7 +385,7 @@ function MosqueCard({ mosque, onDelete }: {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          <button className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#F4EFE6] hover:bg-[#E8DCC8] rounded-2xl text-sm font-semibold text-[#C4A052] transition-all font-sans">
+          <button onClick={onEdit} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#F4EFE6] hover:bg-[#E8DCC8] rounded-2xl text-sm font-semibold text-[#C4A052] transition-all font-sans">
             <Edit2 className="h-4 w-4" /> Edit
           </button>
           <button
@@ -362,34 +402,70 @@ function MosqueCard({ mosque, onDelete }: {
 
 /* ── Main Page ─────────────────────────────────────────────────── */
 export default function NearbyMosquesPage() {
-  const [mosques, setMosques] = useState<Mosque[]>(initialMosques);
-  const [showAdd, setShowAdd] = useState(false);
+  const [mosques, setMosques] = useState<Mosque[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showDialog, setShowDialog] = useState(false);
+  const [editingItem, setEditingItem] = useState<Mosque | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [search, setSearch] = useState("");
+
+  const fetchMosques = async () => {
+    try {
+      setIsLoading(true);
+      const response = await axiosSecure.get("/mosques");
+      setMosques(response.data.data || []);
+    } catch (error) {
+      toast.error("Failed to load mosques");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMosques();
+  }, []);
+
+  const handleDelete = async () => {
+    if (!deletingId) return;
+    try {
+      setIsDeleting(true);
+      await axiosSecure.delete(`/mosques/${deletingId}`);
+      toast.success("Mosque deleted successfully");
+      setMosques(p => p.filter(m => m.id !== deletingId));
+      setDeletingId(null);
+    } catch (error) {
+      toast.error("Failed to delete mosque");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const deletingMosque = mosques.find(m => m.id === deletingId);
 
   const filtered = mosques.filter(m =>
-    m.name.toLowerCase().includes(search.toLowerCase()) ||
-    m.area.toLowerCase().includes(search.toLowerCase()) ||
-    m.address.toLowerCase().includes(search.toLowerCase())
+    m.mosqueName?.toLowerCase().includes(search.toLowerCase()) ||
+    m.area?.toLowerCase().includes(search.toLowerCase()) ||
+    m.address?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div className="space-y-8 pb-12 font-cinzel bg-[#FCFAF8] min-h-screen p-8">
 
-      {showAdd && (
-        <AddMosqueDialog
-          onClose={() => setShowAdd(false)}
-          onAdd={(m) => setMosques(p => [m, ...p])}
+      {showDialog && (
+        <MosqueDialog
+          onClose={() => { setShowDialog(false); setEditingItem(null); }}
+          onSave={fetchMosques}
+          editingItem={editingItem}
         />
       )}
 
       {deletingId && deletingMosque && (
         <DeleteDialog
-          name={deletingMosque.name}
+          name={deletingMosque.mosqueName}
           onClose={() => setDeletingId(null)}
-          onConfirm={() => { setMosques(p => p.filter(m => m.id !== deletingId)); setDeletingId(null); }}
+          onConfirm={handleDelete}
+          isDeleting={isDeleting}
         />
       )}
 
@@ -400,7 +476,7 @@ export default function NearbyMosquesPage() {
           <p className="text-slate-500 mt-2 text-sm font-sans">Manage and discover mosques in the community</p>
         </div>
         <button
-          onClick={() => setShowAdd(true)}
+          onClick={() => setShowDialog(true)}
           className="flex items-center gap-2 px-5 py-3 bg-[#C4A052] hover:bg-[#A8873A] text-white text-sm font-semibold rounded-2xl shadow-sm transition-all font-sans shrink-0"
         >
           <Plus className="h-4 w-4" /> Add Mosque
@@ -431,7 +507,11 @@ export default function NearbyMosquesPage() {
       </div>
 
       {/* Cards grid */}
-      {filtered.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="h-8 w-8 text-[#C4A052] animate-spin" />
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="text-center py-24 text-slate-400 font-sans">
           {search ? `No mosques found for "${search}".` : "No mosques yet. Click \"Add Mosque\" to add one."}
         </div>
@@ -442,6 +522,7 @@ export default function NearbyMosquesPage() {
               key={mosque.id}
               mosque={mosque}
               onDelete={() => setDeletingId(mosque.id)}
+              onEdit={() => { setEditingItem(mosque); setShowDialog(true); }}
             />
           ))}
         </div>

@@ -351,7 +351,6 @@ const Badge = ({ children, className }: { children: React.ReactNode; className?:
 export default function DuasPage() {
   const [duas, setDuas] = useState<Dua[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<FilterTab>("All Duas");
   const [showDialog, setShowDialog] = useState(false);
   const [editingItem, setEditingItem] = useState<Dua | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -389,10 +388,6 @@ export default function DuasPage() {
     }
   };
 
-  const filtered = filter === "By Waqt"
-    ? [...duas].sort((a, b) => a.waqt.localeCompare(b.waqt))
-    : duas;
-
   const deletingItem = duas.find(d => d.id === deletingId);
 
   return (
@@ -425,25 +420,8 @@ export default function DuasPage() {
         </p>
       </div>
 
-      {/* Filter tabs + Upload button */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {(["All Duas", "By Waqt"] as FilterTab[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setFilter(tab)}
-              className={cn(
-                "px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all font-sans",
-                filter === tab
-                  ? "bg-[#C4A052] text-white shadow-sm"
-                  : "bg-white border border-[#C8B99A] text-slate-600 hover:bg-[#F4EFE6]"
-              )}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
+      {/* Add button */}
+      <div className="flex items-center justify-end">
         <button
           onClick={() => setShowDialog(true)}
           className="flex items-center gap-2 px-5 py-3 bg-[#C4A052] hover:bg-[#A8873A] text-white text-sm font-semibold rounded-2xl shadow-sm transition-all font-sans"
@@ -458,13 +436,13 @@ export default function DuasPage() {
         <div className="flex items-center justify-center py-24">
           <Loader2 className="h-8 w-8 text-[#C4A052] animate-spin" />
         </div>
-      ) : filtered.length === 0 ? (
+      ) : duas.length === 0 ? (
         <div className="text-center py-24 text-slate-400 font-sans">
           No duas found. Start by adding one!
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filtered.map(d => (
+          {duas.map(d => (
             <DuaCard
               key={d.id}
               dua={d}
