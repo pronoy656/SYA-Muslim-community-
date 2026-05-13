@@ -189,7 +189,7 @@ function GroupCard({ group, onEdit, onDelete }: {
   onDelete: () => void;
 }) {
   return (
-    <div className="bg-white border border-[#EAE3D5] rounded-[32px] shadow-sm  transition-all overflow-hidden group flex flex-col">
+    <div className="bg-white border border-[#EAE3D5] rounded-[32px] shadow-sm hover:shadow-xl transition-all overflow-hidden group flex flex-col">
       <div className="h-1.5 bg-gradient-to-r from-[#C4A052] to-[#E8C97A]" />
 
       <div className="p-7 flex-1">
@@ -202,7 +202,10 @@ function GroupCard({ group, onEdit, onDelete }: {
             )}
           </div>
           <div className={cn(
-            "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-slate-50 text-slate-500"
+            "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-colors",
+            group.userType === "BROTHER" 
+              ? "bg-blue-100/50 text-blue-600 border border-blue-200" 
+              : "bg-pink-100/50 text-pink-600 border border-pink-200"
           )}>
             {group.userType}
           </div>
