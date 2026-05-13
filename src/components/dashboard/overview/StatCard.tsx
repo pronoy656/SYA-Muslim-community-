@@ -8,7 +8,7 @@ interface StatCardProps {
     label: string;
     value: string;
     trend?: string;
-    trendType?: "positive" | "negative";
+    trendType?: "positive" | "negative" | "neutral";
     Icon: LucideIcon;
     iconBgColor: string;
     iconColor: string;
@@ -42,7 +42,9 @@ export function StatCard({
                             "text-xs font-semibold px-2.5 py-1 rounded-md",
                             trendType === "positive" 
                               ? "text-emerald-600 bg-emerald-50" 
-                              : "text-red-500 bg-red-50"
+                              : trendType === "negative"
+                              ? "text-red-500 bg-red-50"
+                              : "text-slate-500 bg-slate-100"
                         )}>
                             {trend}
                         </div>

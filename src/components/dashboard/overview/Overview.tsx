@@ -1,10 +1,61 @@
 "use client";
-import React from "react";
-import { Users, ShieldCheck, MessageSquare, Video, TrendingUp, UserCheck } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Users, ShieldCheck, MessageSquare, Video, TrendingUp, UserCheck, Loader2 } from "lucide-react";
 import { StatCard } from "./StatCard";
 import { RecentActivity } from "./RecentActivity";
+import axiosSecure from "@/lib/axiosSecure";
+import { toast } from "sonner";
+
+interface Metric {
+  value: number;
+  changePct: number;
+  direction: "up" | "down" | "neutral";
+}
+
+interface DashboardMetrics {
+  meta: { comparisonPeriod: string };
+  totalUsers: Metric;
+  activeUsers: Metric;
+  pendingVerification: Metric;
+  activeQuestions: Metric;
+  uploadedKhutba: Metric;
+}
 
 export default function Overview() {
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const response = await axiosSecure.get("/admin/growth-metrics");
+        setMetrics(response.data.data);
+      } catch (error) {
+        toast.error("Failed to load dashboard metrics");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchMetrics();
+  }, []);
+
+  if (isLoading || !metrics) {
+    return (
+      <div className="flex items-center justify-center min-h-[80vh] bg-[#FCFAF8] rounded-xl">
+        <Loader2 className="h-8 w-8 text-[#C4A052] animate-spin" />
+      </div>
+    );
+  }
+
+  const getTrendProps = (metric: Metric) => {
+    const sign = metric.direction === "up" ? "+" : metric.direction === "down" ? "-" : "";
+    return {
+      value: metric.value.toLocaleString(),
+      trend: `${sign}${metric.changePct}%`,
+      trendType: (metric.direction === "up" ? "positive" : metric.direction === "down" ? "negative" : "neutral") as "positive" | "negative" | "neutral",
+    };
+  };
+
   return (
     <div className="space-y-8 pb-12 font-cinzel bg-[#FCFAF8] min-h-screen p-8 rounded-xl">
       {/* Header Section */}
@@ -19,62 +70,44 @@ export default function Overview() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
           label="Total Users"
-          value="12,453"
-          trend="+12.5%"
-          trendType="positive"
           Icon={Users}
           iconBgColor="bg-[#F4EFE6]"
           iconColor="text-[#C4A052]"
+          {...getTrendProps(metrics.totalUsers)}
         />
         <StatCard
           label="Pending Verifications"
-          value="43"
-          trend="-5.2%"
-          trendType="negative"
           Icon={ShieldCheck}
           iconBgColor="bg-slate-100"
           iconColor="text-slate-500"
+          {...getTrendProps(metrics.pendingVerification)}
         />
         <StatCard
           label="Active Questions"
-          value="1,247"
-          trend="+8.3%"
-          trendType="positive"
           Icon={MessageSquare}
           iconBgColor="bg-[#F4EFE6]"
           iconColor="text-[#C4A052]"
+          {...getTrendProps(metrics.activeQuestions)}
         />
       </div>
 
       {/* Row 2: Performance Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
-          label="Uploaded Videos"
-          value="342"
-          trend="+23.1%"
-          trendType="positive"
+          label="Uploaded Khutbas"
           Icon={Video}
           iconBgColor="bg-[#F4EFE6]"
           iconColor="text-[#C4A052]"
+          {...getTrendProps(metrics.uploadedKhutba)}
         />
         <StatCard
           label="Active Users (30d)"
-          value="8,921"
-          trend="+15.7%"
-          trendType="positive"
           Icon={TrendingUp}
           iconBgColor="bg-[#F4F1E1]"
           iconColor="text-[#D4AF37]"
+          {...getTrendProps(metrics.activeUsers)}
         />
-        <StatCard
-          label="Verified Users"
-          value="11,234"
-          trend="+6.8%"
-          trendType="positive"
-          Icon={UserCheck}
-          iconBgColor="bg-[#F4EFE6]"
-          iconColor="text-[#C4A052]"
-        />
+        {/* Placeholder for symmetric grid if needed, or we just leave it 2 cols in row 2 */}
       </div>
 
       {/* Recent Activity */}
