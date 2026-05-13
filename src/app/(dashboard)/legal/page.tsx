@@ -75,62 +75,60 @@ export default function LegalPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   return (
-    <div className="p-8 min-h-[calc(100vh-64px)] bg-[#0F172A] text-slate-200 font-sans">
+    <div className="p-8 min-h-[calc(100vh-64px)] bg-[#FCFAF8] text-slate-800 font-sans">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
         <div>
           <div className="flex items-center gap-2 text-[#C4A052] mb-2">
             <Scale className="h-5 w-5" />
-            <span className="text-sm font-medium tracking-widest uppercase">Legal Compliance</span>
+            <span className="text-xs font-bold tracking-[0.3em] uppercase">Legal Compliance</span>
           </div>
-          <h1 className="text-4xl font-bold text-white font-cinzel">Legal Documents</h1>
-          <p className="text-slate-400 mt-2">Manage your legal policies, terms of service, and user agreements.</p>
+          <h1 className="text-4xl font-normal text-slate-900 font-cinzel tracking-widest uppercase">Legal Documents</h1>
+          <p className="text-slate-500 mt-2 text-sm max-w-xl">Manage your legal policies, terms of service, and user agreements with a unified administrative oversight.</p>
         </div>
         
         <Link href="/legal/create">
-          <Button className="bg-[#C4A052] hover:bg-[#A38541] text-white px-6 py-6 rounded-xl flex items-center gap-2 shadow-lg shadow-[#C4A052]/20 transition-all hover:scale-105 active:scale-95 border-none">
+          <Button className="bg-[#C4A052] hover:bg-[#A38541] text-white px-8 py-7 rounded-2xl flex items-center gap-2 shadow-xl shadow-[#C4A052]/20 transition-all hover:scale-105 active:scale-95 border-none font-bold uppercase tracking-widest text-xs">
             <Plus className="h-5 w-5" />
-            <span className="font-bold">Add New Page</span>
+            Add New Page
           </Button>
         </Link>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         {[
-          { label: "Total Documents", value: "12", icon: FileText, color: "text-blue-400" },
-          { label: "Published", value: "8", icon: CheckCircle2, color: "text-emerald-400" },
-          { label: "Drafts", value: "4", icon: Clock, color: "text-amber-400" },
+          { label: "Total Documents", value: "12", icon: FileText, color: "text-blue-500", bg: "bg-blue-50" },
+          { label: "Published", value: "8", icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50" },
+          { label: "Drafts", value: "4", icon: Clock, color: "text-amber-500", bg: "bg-amber-50" },
         ].map((stat, i) => (
-          <div key={i} className="bg-[#1E293B]/50 border border-slate-800 p-6 rounded-2xl backdrop-blur-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-400 text-sm font-medium">{stat.label}</p>
-                <p className="text-3xl font-bold text-white mt-1">{stat.value}</p>
-              </div>
-              <div className={`p-3 rounded-xl bg-slate-800/50 ${stat.color}`}>
-                <stat.icon className="h-6 w-6" />
-              </div>
+          <div key={i} className="bg-white border border-[#EAE3D5] p-6 rounded-[2rem] shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
+            <div>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">{stat.label}</p>
+              <p className="text-4xl font-normal text-slate-900 mt-1 font-cinzel">{stat.value}</p>
+            </div>
+            <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color} transition-transform group-hover:scale-110`}>
+              <stat.icon className="h-7 w-7" />
             </div>
           </div>
         ))}
       </div>
 
       {/* Controls */}
-      <div className="bg-[#1E293B] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
-        <div className="p-6 border-b border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="relative w-full md:w-96">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+      <div className="bg-white border border-[#EAE3D5] rounded-[2.5rem] overflow-hidden shadow-sm">
+        <div className="p-8 border-b border-[#EAE3D5] flex flex-col md:flex-row md:items-center justify-between gap-6 bg-[#FAF7F2]/30">
+          <div className="relative w-full md:w-[450px]">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input 
               placeholder="Search by title..." 
-              className="pl-11 bg-[#0F172A] border-slate-800 text-slate-200 focus:ring-[#C4A052] h-12 rounded-xl"
+              className="pl-12 bg-[#FAF7F2] border-[#E0D4BC] text-slate-800 placeholder:text-slate-400 focus:ring-[#C4A052] h-14 rounded-2xl transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="border-slate-800 bg-[#0F172A] text-slate-300 hover:bg-slate-800 h-12 px-5 rounded-xl gap-2">
+            <Button variant="outline" className="border-[#E0D4BC] bg-white text-slate-600 hover:bg-[#FAF7F2] h-14 px-7 rounded-2xl gap-3 font-bold text-xs uppercase tracking-widest transition-all">
               <Filter className="h-4 w-4" />
               Filter
             </Button>
@@ -140,60 +138,45 @@ export default function LegalPage() {
         {/* Table */}
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="bg-[#0F172A]/50">
-              <TableRow className="border-slate-800 hover:bg-transparent">
-                <TableHead className="text-slate-400 font-bold uppercase text-xs tracking-wider py-5 pl-8">Title</TableHead>
-                <TableHead className="text-slate-400 font-bold uppercase text-xs tracking-wider py-5">Slug / Key</TableHead>
-                <TableHead className="text-slate-400 font-bold uppercase text-xs tracking-wider py-5">Version</TableHead>
-                <TableHead className="text-slate-400 font-bold uppercase text-xs tracking-wider py-5">Last Updated</TableHead>
-                <TableHead className="text-slate-400 font-bold uppercase text-xs tracking-wider py-5">Status</TableHead>
-                <TableHead className="text-slate-400 font-bold uppercase text-xs tracking-wider py-5 text-right pr-8">Actions</TableHead>
+            <TableHeader className="bg-[#FAF7F2]">
+              <TableRow className="border-[#EAE3D5] hover:bg-transparent">
+                <TableHead className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] py-6 pl-10">Title</TableHead>
+                <TableHead className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] py-6">Slug / Key</TableHead>
+                <TableHead className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] py-6">Version</TableHead>
+                <TableHead className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] py-6">Last Updated</TableHead>
+                <TableHead className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] py-6">Status</TableHead>
+                <TableHead className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] py-6 text-right pr-10">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {LEGAL_DOCS.map((doc) => (
-                <TableRow key={doc.id} className="border-slate-800 hover:bg-slate-800/30 transition-colors group">
-                  <TableCell className="py-5 pl-8 font-medium text-white">{doc.title}</TableCell>
-                  <TableCell className="py-5">
-                    <code className="text-[#C4A052] bg-[#C4A052]/10 px-2 py-1 rounded text-xs font-mono">{doc.slug}</code>
+                <TableRow key={doc.id} className="border-[#EAE3D5] hover:bg-[#FAF7F2]/50 transition-colors group">
+                  <TableCell className="py-6 pl-10 font-bold text-slate-800 font-cinzel tracking-wide">{doc.title}</TableCell>
+                  <TableCell className="py-6">
+                    <code className="text-[#C4A052] bg-[#FAF7F2] border border-[#E0D4BC] px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold">{doc.slug}</code>
                   </TableCell>
-                  <TableCell className="py-5 text-slate-400">{doc.version}</TableCell>
-                  <TableCell className="py-5 text-slate-400">{doc.lastUpdated}</TableCell>
-                  <TableCell className="py-5">
+                  <TableCell className="py-6 text-slate-500 text-sm">{doc.version}</TableCell>
+                  <TableCell className="py-6 text-slate-500 text-sm">{doc.lastUpdated}</TableCell>
+                  <TableCell className="py-6">
                     <Badge className={
                       doc.status === "Published" 
-                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20" 
-                      : "bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20"
+                      ? "bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100 rounded-lg px-3 py-1 text-[10px] font-bold" 
+                      : "bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100 rounded-lg px-3 py-1 text-[10px] font-bold"
                     }>
                       {doc.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="py-5 text-right pr-8">
+                  <TableCell className="py-6 text-right pr-10">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg">
+                      <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400 hover:text-slate-900 hover:bg-[#FAF7F2] rounded-xl transition-all">
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-400 hover:text-[#C4A052] hover:bg-[#C4A052]/10 rounded-lg">
+                      <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400 hover:text-[#C4A052] hover:bg-[#C4A052]/10 rounded-xl transition-all">
                         <Edit2 className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg">
+                      <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                    </div>
-                    {/* Fallback for mobile/touch */}
-                    <div className="md:hidden">
-                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="text-slate-400">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-[#1E293B] border-slate-800 text-slate-200">
-                          <DropdownMenuItem className="focus:bg-slate-800 focus:text-white cursor-pointer">View</DropdownMenuItem>
-                          <DropdownMenuItem className="focus:bg-slate-800 focus:text-white cursor-pointer">Edit</DropdownMenuItem>
-                          <DropdownMenuItem className="focus:bg-red-500/10 focus:text-red-400 cursor-pointer text-red-400">Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -203,20 +186,20 @@ export default function LegalPage() {
         </div>
 
         {/* Pagination */}
-        <div className="p-6 border-t border-slate-800 flex items-center justify-between">
-          <p className="text-sm text-slate-500">
-            Showing <span className="text-slate-300 font-medium">1 to 4</span> of <span className="text-slate-300 font-medium">12</span> documents
+        <div className="p-8 border-t border-[#EAE3D5] flex items-center justify-between bg-[#FAF7F2]/20">
+          <p className="text-xs text-slate-400 font-medium">
+            Showing <span className="text-slate-800 font-bold">1 to 4</span> of <span className="text-slate-800 font-bold">12</span> documents
           </p>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" className="border-slate-800 bg-[#0F172A] text-slate-500 hover:bg-slate-800 disabled:opacity-30" disabled>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="icon" className="border-[#E0D4BC] bg-white text-slate-400 hover:bg-[#FAF7F2] rounded-xl h-10 w-10" disabled>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <div className="flex items-center gap-1">
-              <Button className="h-9 w-9 bg-[#C4A052] text-white p-0 rounded-lg font-bold">1</Button>
-              <Button variant="ghost" className="h-9 w-9 text-slate-400 hover:text-white hover:bg-slate-800 p-0 rounded-lg font-bold">2</Button>
-              <Button variant="ghost" className="h-9 w-9 text-slate-400 hover:text-white hover:bg-slate-800 p-0 rounded-lg font-bold">3</Button>
+            <div className="flex items-center gap-1.5">
+              <Button className="h-10 w-10 bg-[#C4A052] text-white p-0 rounded-xl font-bold text-xs shadow-lg shadow-[#C4A052]/20">1</Button>
+              <Button variant="ghost" className="h-10 w-10 text-slate-500 hover:text-[#C4A052] hover:bg-[#C4A052]/10 p-0 rounded-xl font-bold text-xs">2</Button>
+              <Button variant="ghost" className="h-10 w-10 text-slate-500 hover:text-[#C4A052] hover:bg-[#C4A052]/10 p-0 rounded-xl font-bold text-xs">3</Button>
             </div>
-            <Button variant="outline" size="icon" className="border-slate-800 bg-[#0F172A] text-slate-500 hover:bg-slate-800">
+            <Button variant="outline" size="icon" className="border-[#E0D4BC] bg-white text-slate-400 hover:bg-[#FAF7F2] rounded-xl h-10 w-10">
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
