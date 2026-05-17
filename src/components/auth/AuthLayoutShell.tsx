@@ -50,7 +50,7 @@ export default function AuthLayoutShell({
               alt="SYA Logo"
               width={160}
               height={70}
-              className="object-contain"
+              className="object-contain animate-heartbeat"
               priority
             />
           </div>

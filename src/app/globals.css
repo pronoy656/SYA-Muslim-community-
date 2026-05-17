@@ -137,4 +137,20 @@
   .surface-alt {
     background-color: var(--surface-alt);
   }
+  
+  @keyframes heartbeat {
+    0%, 100% {
+      transform: scale(0.97);
+      opacity: 0.8;
+      filter: blur(0.5px) drop-shadow(0 0 0px rgba(196, 160, 82, 0));
+    }
+    50% {
+      transform: scale(1.04);
+      opacity: 1;
+      filter: blur(0px) drop-shadow(0 8px 25px rgba(196, 160, 82, 0.5));
+    }
+  }
+  .animate-heartbeat {
+    animation: heartbeat 3s ease-in-out infinite;
+  }
 }
