@@ -5,52 +5,34 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import axiosSecure from "@/lib/axiosSecure";
+import { toast } from "sonner";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+
 type QuestionStatus = "pending" | "answered";
 
-interface ImamQuestion {
+interface ApiQuestion {
   id: string;
-  userName: string;
-  userEmail: string;
+  userId: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  userRole?: "SISTER" | "BROTHER";
   question: string;
-  date: string;
+  imageUrl?: string;
   status: QuestionStatus;
-  answer?: string;
-  category: string;
+  createdAt: string;
+  updatedAt: string;
+  answers?: {
+    text: string;
+    createdAt: string;
+    isActive: boolean;
+  }[];
 }
 
-const initialQuestions: ImamQuestion[] = [
-  {
-    id: "1", userName: "Omar Hassan",  userEmail: "omar@example.com",
-    question: "How can I improve my concentration during Salah? I find my mind wandering and I want to be more present in my prayers.",
-    date: "2024-04-30", status: "pending", category: "Prayer",
-  },
-  {
-    id: "2", userName: "Yusuf Ahmed",  userEmail: "yusuf@example.com",
-    question: "Is it permissible to miss Jummah prayer due to work commitments?",
-    date: "2024-04-29", status: "pending", category: "Fiqh",
-  },
-  {
-    id: "3", userName: "Khalid Said",  userEmail: "khalid@example.com",
-    question: "What is the correct pronunciation of Surah Al-Fatiha? I want to make sure I am reciting it correctly.",
-    date: "2024-04-26", status: "pending", category: "Quran",
-  },
-  {
-    id: "4", userName: "Maryam Noor",  userEmail: "maryam@example.com",
-    question: "What are the conditions for Zakat to become obligatory?",
-    date: "2024-04-20", status: "answered",
-    answer: "As-salamu alaykum wa rahmatullahi wa barakatuh. Zakat becomes obligatory when a Muslim possesses a minimum amount (nisab) for one lunar year. May Allah bless you.",
-    category: "Zakat",
-  },
-  {
-    id: "5", userName: "Bilal Kareem", userEmail: "bilal@example.com",
-    question: "Can I perform Wudu with tap water that has a slight odour?",
-    date: "2024-04-18", status: "answered",
-    answer: "Wa alaykum as-salam. Water that has a slight natural odour is still considered pure and valid for Wudu, as long as it has not been majorly altered. Allahu Akbar.",
-    category: "Purification",
-  },
-];
-
 type FilterTab = "All" | "Pending" | "Answered";
+type RoleFilter = "All" | "BROTHER" | "SISTER";
 
 /* ── Stat Card ─────────────────────────────────────────────────── */
 function StatCard({ icon, value, label, color }: {
@@ -71,16 +53,27 @@ function StatCard({ icon, value, label, color }: {
 
 /* ── Answer Dialog ─────────────────────────────────────────────── */
 function AnswerDialog({ question, onClose, onSubmit }: {
-  question: ImamQuestion;
+  question: ApiQuestion;
   onClose: () => void;
   onSubmit: (id: string, answer: string) => void;
 }) {
   const [answer, setAnswer] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!answer.trim()) return;
-    onSubmit(question.id, answer.trim());
-    onClose();
+    setLoading(true);
+    try {
+      await axiosSecure.patch(`/ask-question/${question.id}/answer`, { answer: answer.trim() });
+      toast.success("Question answered successfully");
+      onSubmit(question.id, answer.trim());
+      onClose();
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      toast.error(error.response?.data?.message || "Failed to submit answer");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -102,11 +95,22 @@ function AnswerDialog({ question, onClose, onSubmit }: {
           <div className="bg-[#FAF7F2] border border-[#EAE3D5] rounded-2xl px-5 py-4 space-y-3">
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">User</p>
-              <p className="text-sm font-bold text-slate-800 mt-0.5">{question.userName}</p>
+              <p className="text-sm font-bold text-slate-800 mt-0.5">
+                {question.userId?.name || "Unknown User"} 
+                {question.userRole && (
+                  <span className={cn(
+                    "ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider align-middle",
+                    question.userRole === "BROTHER" ? "bg-blue-50 text-blue-600" : "bg-pink-50 text-pink-600"
+                  )}>
+                    {question.userRole}
+                  </span>
+                )}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">{question.userId?.email || "No email"}</p>
             </div>
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Date Submitted</p>
-              <p className="text-sm font-semibold text-slate-700 mt-0.5">{question.date}</p>
+              <p className="text-sm font-semibold text-slate-700 mt-0.5">{new Date(question.createdAt).toLocaleDateString()}</p>
             </div>
           </div>
 
@@ -141,11 +145,11 @@ function AnswerDialog({ question, onClose, onSubmit }: {
           </button>
           <button
             onClick={handleSend}
-            disabled={!answer.trim()}
+            disabled={!answer.trim() || loading}
             className="flex-1 py-3.5 text-sm font-semibold bg-[#C4A052] text-white rounded-2xl hover:bg-[#A8873A] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm flex items-center justify-center gap-2"
           >
-            <Send className="h-4 w-4" />
-            Send Answer
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {loading ? "Sending..." : "Send Answer"}
           </button>
         </div>
       </div>
@@ -155,35 +159,47 @@ function AnswerDialog({ question, onClose, onSubmit }: {
 
 /* ── Main Page ─────────────────────────────────────────────────── */
 export default function AskImamPage() {
-  const [questions, setQuestions] = useState<ImamQuestion[]>(initialQuestions);
+  const [questions, setQuestions] = useState<ApiQuestion[]>([]);
   const [filter, setFilter] = useState<FilterTab>("All");
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("All");
   const [search, setSearch] = useState("");
   const [answeringId, setAnsweringId] = useState<string | null>(null);
+  
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalQuestionsCount, setTotalQuestionsCount] = useState(0);
+
+  const limit = 10;
+
+  const fetchQuestions = React.useCallback(async (page: number) => {
+    setLoading(true);
+    try {
+      const params: Record<string, string | number> = { page, limit };
+      if (search) params.searchTerm = search;
+      if (filter === "Pending") params.status = "pending";
+      if (filter === "Answered") params.status = "answered";
+      if (roleFilter !== "All") params.userRole = roleFilter;
+
+      const res = await axiosSecure.get("/ask-question", { params });
+      setQuestions(res.data.data.data || res.data.data || []);
+      setTotalPages(res.data.data.meta?.totalPages || res.data.meta?.totalPages || 1);
+      setTotalQuestionsCount(res.data.data.meta?.total || res.data.meta?.total || 0);
+    } catch {
+      toast.error("Failed to fetch questions");
+    } finally {
+      setLoading(false);
+    }
+  }, [search, filter, roleFilter]);
+
+  React.useEffect(() => {
+    fetchQuestions(currentPage);
+  }, [fetchQuestions, currentPage]);
 
   const answeringQuestion = questions.find(q => q.id === answeringId) ?? null;
 
-  const counts = {
-    All: questions.length,
-    Pending: questions.filter(q => q.status === "pending").length,
-    Answered: questions.filter(q => q.status === "answered").length,
-  };
-
-  const filtered = questions.filter(q => {
-    const matchesFilter =
-      filter === "All" ||
-      (filter === "Pending" && q.status === "pending") ||
-      (filter === "Answered" && q.status === "answered");
-    const matchesSearch =
-      q.userName.toLowerCase().includes(search.toLowerCase()) ||
-      q.question.toLowerCase().includes(search.toLowerCase()) ||
-      q.category.toLowerCase().includes(search.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
-
-  const handleSubmitAnswer = (id: string, answer: string) => {
-    setQuestions(prev =>
-      prev.map(q => q.id === id ? { ...q, status: "answered", answer } : q)
-    );
+  const handleSubmitAnswer = () => {
+    fetchQuestions(currentPage);
   };
 
   return (
@@ -206,26 +222,14 @@ export default function AskImamPage() {
         </p>
       </div>
 
-      {/* Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard
           icon={<MessageSquare className="h-6 w-6 text-[#C4A052]" />}
-          value={counts.All}
+          value={totalQuestionsCount}
           label="Total Questions"
           color="bg-[#F4EFE6]"
         />
-        <StatCard
-          icon={<Clock className="h-6 w-6 text-amber-500" />}
-          value={counts.Pending}
-          label="Pending Answers"
-          color="bg-amber-50"
-        />
-        <StatCard
-          icon={<CheckCircle2 className="h-6 w-6 text-emerald-500" />}
-          value={counts.Answered}
-          label="Answered"
-          color="bg-emerald-50"
-        />
+        {/* Currently dynamic stats for pending/answered are based on filter or overall total if available */}
       </div>
 
       {/* Search + Filter row */}
@@ -242,64 +246,100 @@ export default function AskImamPage() {
         </div>
 
         {/* Filter tabs */}
-        <div className="flex items-center gap-2">
-          {(["All", "Pending", "Answered"] as FilterTab[]).map(tab => (
-            <button
-              key={tab}
-              onClick={() => setFilter(tab)}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all font-sans",
-                filter === tab
-                  ? tab === "Pending"
-                    ? "bg-amber-500 text-white shadow-sm"
-                    : tab === "Answered"
-                    ? "bg-emerald-500 text-white shadow-sm"
-                    : "bg-[#C4A052] text-white shadow-sm"
-                  : "bg-[#FAF7F2] border border-[#E0D4BC] text-slate-600 hover:bg-[#F0EBE1]"
-              )}
-            >
-              {tab}
-              {tab !== "All" && (
-                <span className={cn(
-                  "text-[11px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center",
-                  filter === tab ? "bg-white/25" : "bg-[#E0D4BC] text-slate-600"
-                )}>
-                  {counts[tab]}
-                </span>
-              )}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-3 md:gap-4">
+          <div className="flex items-center gap-1.5 bg-[#FAF7F2] border border-[#E0D4BC] p-1 rounded-xl">
+            {(["All", "BROTHER", "SISTER"] as RoleFilter[]).map(tab => (
+              <button
+                key={tab}
+                onClick={() => {
+                  setRoleFilter(tab);
+                  setCurrentPage(1);
+                }}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-bold transition-all uppercase tracking-wider font-sans",
+                  roleFilter === tab
+                    ? "bg-[#C4A052] text-white shadow-sm"
+                    : "text-slate-500 hover:text-slate-700 hover:bg-[#F4EFE6]"
+                )}
+              >
+                {tab === "All" ? "All Genders" : tab}
+              </button>
+            ))}
+          </div>
+          
+          <div className="flex items-center gap-1.5">
+            {(["All", "Pending", "Answered"] as FilterTab[]).map(tab => (
+              <button
+                key={tab}
+                onClick={() => {
+                  setFilter(tab);
+                  setCurrentPage(1);
+                }}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all font-sans",
+                  filter === tab
+                    ? tab === "Pending"
+                      ? "bg-amber-500 text-white shadow-sm"
+                      : tab === "Answered"
+                      ? "bg-emerald-500 text-white shadow-sm"
+                      : "bg-[#C4A052] text-white shadow-sm"
+                    : "bg-[#FAF7F2] border border-[#E0D4BC] text-slate-600 hover:bg-[#F0EBE1]"
+                )}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Table */}
       <div className="bg-white border border-[#EAE3D5] rounded-2xl shadow-sm overflow-hidden">
         {/* Table header */}
-        <div className="grid grid-cols-[180px_1fr_130px_130px_110px] bg-[#FAF7F2] border-b border-[#EAE3D5] px-6 py-3">
-          {["User", "Question", "Date", "Status", "Action"].map(h => (
+        <div className="grid grid-cols-[1.5fr_1fr_2fr_1fr_1fr_120px] bg-[#FAF7F2] border-b border-[#EAE3D5] px-6 py-3">
+          {["User", "Role", "Question", "Date", "Status", "Action"].map(h => (
             <div key={h} className="text-xs font-bold text-slate-500 uppercase tracking-wider font-sans">{h}</div>
           ))}
         </div>
 
         {/* Rows */}
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-32 gap-4">
+            <div className="h-12 w-12 border-4 border-[#C4A052] border-t-transparent rounded-full animate-spin" />
+            <p className="text-slate-400 font-cinzel tracking-widest uppercase text-sm">Loading Questions...</p>
+          </div>
+        ) : questions.length === 0 ? (
           <div className="text-center py-16 text-slate-400 font-sans text-sm">
             No questions found.
           </div>
         ) : (
-          filtered.map((q, i) => (
+          questions.map((q, i) => (
             <div
               key={q.id}
               className={cn(
-                "grid grid-cols-[180px_1fr_130px_130px_110px] px-6 py-4 items-center gap-2",
-                i !== filtered.length - 1 && "border-b border-[#F0EBE1]",
+                "grid grid-cols-[1.5fr_1fr_2fr_1fr_1fr_120px] px-6 py-4 items-center gap-2",
+                i !== questions.length - 1 && "border-b border-[#F0EBE1]",
                 "hover:bg-[#FDFAF6] transition-colors"
               )}
             >
               {/* User */}
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-slate-800 truncate">{q.userName}</p>
-                <p className="text-xs text-slate-400 font-sans truncate">{q.userEmail}</p>
+              <div className="min-w-0 pr-2 flex flex-col justify-center">
+                <p className="text-sm font-bold text-slate-800 truncate">{q.userId?.name || "Anonymous"}</p>
+                <p className="text-xs text-slate-400 font-sans truncate">{q.userId?.email || "No email"}</p>
+              </div>
+
+              {/* Role */}
+              <div>
+                {q.userRole ? (
+                  <span className={cn(
+                    "px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider",
+                    q.userRole === "BROTHER" ? "bg-blue-50 text-blue-600 border border-blue-100" : "bg-pink-50 text-pink-600 border border-pink-100"
+                  )}>
+                    {q.userRole}
+                  </span>
+                ) : (
+                  <span className="text-xs text-slate-400 italic">None</span>
+                )}
               </div>
 
               {/* Question */}
@@ -311,7 +351,7 @@ export default function AskImamPage() {
 
               {/* Date */}
               <div>
-                <p className="text-sm text-slate-500 font-sans">{q.date}</p>
+                <p className="text-sm text-slate-500 font-sans">{new Date(q.createdAt).toLocaleDateString()}</p>
               </div>
 
               {/* Status */}
@@ -347,6 +387,44 @@ export default function AskImamPage() {
               </div>
             </div>
           ))
+        )}
+
+        {/* Pagination Controls */}
+        {!loading && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-4 py-8 border-t border-slate-100 bg-[#FAF7F2]">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-3 rounded-2xl bg-white border border-[#EAE3D5] text-slate-400 hover:text-[#C4A052] hover:border-[#C4A052] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            
+            <div className="flex items-center gap-2">
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={cn(
+                    "h-10 w-10 rounded-xl text-sm font-bold transition-all",
+                    currentPage === i + 1
+                      ? "bg-[#C4A052] text-white shadow-lg shadow-[#C4A052]/20"
+                      : "bg-white border border-[#EAE3D5] text-slate-500 hover:border-[#C4A052] hover:text-[#C4A052]"
+                  )}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-3 rounded-2xl bg-white border border-[#EAE3D5] text-slate-400 hover:text-[#C4A052] hover:border-[#C4A052] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
         )}
       </div>
     </div>
