@@ -1,14 +1,15 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import {
   Plus, X, MapPin, Phone, Globe, Clock,
   Edit2, Trash2, AlertTriangle, Search,
-  Navigation, ExternalLink, Loader2
+  Navigation, ExternalLink, Loader2, ImageIcon, FileText
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axiosSecure from "@/lib/axiosSecure";
 import { toast } from "sonner";
+import Image from "next/image";
 
 // Load map only on client side (no SSR)
 const MapPicker = dynamic(() => import("@/components/MapPicker"), { ssr: false });
@@ -30,12 +31,13 @@ interface Mosque {
   area: string;
   phoneNumber?: string;
   website?: string;
-  location?: {
-      type: "Point";
-      coordinates: [number, number]; // [lng, lat]
-  };
+  description?: string;
+  image?: string;
+  latitude?: number;
+  longitude?: number;
+  mapLink?: string;
+  distanceInKm?: number;
   prayerTimes: PrayerTimes;
-  createdAt?: string;
   updatedAt?: string;
 }
 
@@ -126,43 +128,66 @@ function MosqueDialog({ onClose, onSave, editingItem }: {
   const [mosqueName, setMosqueName] = useState(editingItem?.mosqueName || "");
   const [address, setAddress] = useState(editingItem?.address || "");
   const [area, setArea] = useState(editingItem?.area || "");
-  const [lat, setLat] = useState<number | null>(editingItem?.location?.coordinates?.[1] ?? null);
-  const [lng, setLng] = useState<number | null>(editingItem?.location?.coordinates?.[0] ?? null);
+  const [description, setDescription] = useState(editingItem?.description || "");
+  const [lat, setLat] = useState<number | null>(editingItem?.latitude ?? null);
+  const [lng, setLng] = useState<number | null>(editingItem?.longitude ?? null);
   const [showMap, setShowMap] = useState(false);
   const [phone, setPhone] = useState(editingItem?.phoneNumber || "");
   const [website, setWebsite] = useState(editingItem?.website || "");
   const [pt, setPt] = useState<PrayerTimes>(
     editingItem?.prayerTimes || { fajr: "", dhuhr: "", asr: "", maghrib: "", isha: "", jummah: "" }
   );
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>(editingItem?.image || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const canSubmit = mosqueName.trim() && address.trim() && area.trim();
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
 
   const handleSave = async () => {
     if (!canSubmit) return;
     setIsSubmitting(true);
     try {
-      const payload: any = {
-        mosqueName: mosqueName.trim(),
-        address: address.trim(),
-        area: area.trim(),
-        phoneNumber: phone.trim() || undefined,
-        website: website.trim() || undefined,
-        prayerTimes: pt,
-      };
+      const formData = new FormData();
+      formData.append("mosqueName", mosqueName.trim());
+      formData.append("address", address.trim());
+      formData.append("area", area.trim());
+      if (phone.trim()) formData.append("phoneNumber", phone.trim());
+      if (website.trim()) formData.append("website", website.trim());
+      if (description.trim()) formData.append("description", description.trim());
 
+      // location as GeoJSON Point string
       if (lat != null && lng != null) {
-        payload.location = {
-          type: "Point",
-          coordinates: [lng, lat],
-        };
+        formData.append(
+          "location",
+          JSON.stringify({ type: "Point", coordinates: [lng, lat] })
+        );
+      }
+
+      // prayerTimes as JSON string
+      formData.append("prayerTimes", JSON.stringify(pt));
+
+      // image file (optional)
+      if (imageFile) {
+        formData.append("image", imageFile);
       }
 
       if (editingItem) {
-        await axiosSecure.patch(`/mosques/${editingItem.id}`, payload);
+        await axiosSecure.patch(`/mosques/${editingItem.id}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
         toast.success("Mosque updated successfully");
       } else {
-        await axiosSecure.post("/mosques", payload);
+        await axiosSecure.post("/mosques", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
         toast.success("Mosque created successfully");
       }
       onSave();
@@ -202,6 +227,39 @@ function MosqueDialog({ onClose, onSave, editingItem }: {
 
           {/* Form */}
           <div className="px-8 py-4 space-y-4 overflow-y-auto flex-1">
+
+            {/* Image Upload */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <ImageIcon className="h-4 w-4 text-[#C4A052]" /> Mosque Image
+              </label>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="relative w-full h-36 rounded-2xl border-2 border-dashed border-[#E0D4BC] bg-[#FAF7F2] flex items-center justify-center cursor-pointer hover:border-[#C4A052] hover:bg-[#F4EFE6] transition-all overflow-hidden"
+              >
+                {imagePreview ? (
+                  <>
+                    <img src={imagePreview} alt="Mosque preview" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                      <p className="text-white text-xs font-semibold">Click to change</p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-slate-400">
+                    <ImageIcon className="h-8 w-8" />
+                    <span className="text-xs font-medium">Click to upload mosque image</span>
+                    <span className="text-[10px]">JPG, PNG, JPEG (max 1)</span>
+                  </div>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageChange}
+              />
+            </div>
 
             {/* Mosque Name */}
             <div className="space-y-1.5">
@@ -251,7 +309,7 @@ function MosqueDialog({ onClose, onSave, editingItem }: {
                 <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
                   <Phone className="h-3.5 w-3.5 text-[#C4A052]" /> Phone Number
                 </label>
-                <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+44 20 0000 0000" className={inputClass} />
+                <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+880 00 0000 0000" className={inputClass} />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
@@ -259,6 +317,20 @@ function MosqueDialog({ onClose, onSave, editingItem }: {
                 </label>
                 <input value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://..." className={inputClass} />
               </div>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-[#C4A052]" /> Description
+              </label>
+              <textarea
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                placeholder="Brief description of the mosque (optional)"
+                rows={3}
+                className={cn(inputClass, "resize-none")}
+              />
             </div>
 
             {/* Prayer Times */}
@@ -313,16 +385,43 @@ function MosqueCard({ mosque, onDelete, onEdit }: {
   onDelete: () => void;
   onEdit: () => void;
 }) {
-  const lng = mosque.location?.coordinates?.[0];
-  const lat = mosque.location?.coordinates?.[1];
+  const hasImage = mosque.image && mosque.image.trim() !== "";
+  const hasDistance = mosque.distanceInKm !== undefined && mosque.distanceInKm > 0;
 
   return (
     <div className="bg-white border border-[#EAE3D5] rounded-3xl shadow-sm hover:shadow-md transition-all overflow-hidden">
-      <div className="h-1.5 bg-gradient-to-r from-[#C4A052] to-[#E8C97A]" />
+      {/* Image or gradient bar */}
+      {hasImage ? (
+        <div className="relative h-36 overflow-hidden">
+          <img
+            src={mosque.image!}
+            alt={mosque.mosqueName}
+            className="w-full h-full object-cover"
+            onError={e => {
+              (e.target as HTMLImageElement).style.display = "none";
+              (e.target as HTMLImageElement).parentElement!.classList.add("fallback-bar");
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+          {hasDistance && (
+            <span className="absolute top-3 right-3 bg-black/50 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm font-sans">
+              {mosque.distanceInKm!.toFixed(1)} km away
+            </span>
+          )}
+        </div>
+      ) : (
+        <div className="relative h-1.5 bg-gradient-to-r from-[#C4A052] to-[#E8C97A]">
+          {hasDistance && (
+            <span className="absolute -bottom-6 right-3 bg-[#F4EFE6] text-[#C4A052] text-[10px] font-semibold px-2.5 py-1 rounded-full font-sans">
+              {mosque.distanceInKm!.toFixed(1)} km away
+            </span>
+          )}
+        </div>
+      )}
 
-      <div className="p-6">
+      <div className={cn("p-6", !hasImage && hasDistance && "pt-8")}>
         {/* Name + area badge */}
-        <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-start gap-3">
             <div className="h-11 w-11 rounded-2xl bg-[#F4EFE6] flex items-center justify-center shrink-0 mt-0.5">
               <MapPin className="h-5 w-5 text-[#C4A052]" />
@@ -339,12 +438,19 @@ function MosqueCard({ mosque, onDelete, onEdit }: {
         </div>
 
         {/* Address */}
-        <p className="text-xs text-slate-500 font-sans mb-4 leading-relaxed pl-1">
+        <p className="text-xs text-slate-500 font-sans mb-2 leading-relaxed pl-1">
           📍 {mosque.address}
         </p>
 
+        {/* Description */}
+        {mosque.description && (
+          <p className="text-xs text-slate-400 font-sans mb-3 leading-relaxed pl-1 line-clamp-2 italic">
+            {mosque.description}
+          </p>
+        )}
+
         {/* Contact row */}
-        <div className="flex items-center gap-3 mb-5 flex-wrap">
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
           {mosque.phoneNumber && (
             <a href={`tel:${mosque.phoneNumber}`} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-[#C4A052] transition-colors font-sans">
               <Phone className="h-3.5 w-3.5" />
@@ -359,9 +465,9 @@ function MosqueCard({ mosque, onDelete, onEdit }: {
               <ExternalLink className="h-2.5 w-2.5" />
             </a>
           )}
-          {lat != null && lng != null && (
+          {mosque.mapLink && (
             <a
-              href={`https://www.google.com/maps?q=${lat},${lng}`}
+              href={mosque.mapLink}
               target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-[#C4A052] transition-colors font-sans"
             >
