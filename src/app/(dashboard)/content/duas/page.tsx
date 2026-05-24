@@ -143,7 +143,7 @@ function DuaDialog({ onClose, onSave, editingItem }: {
             >
               <option value="">Select Waqt</option>
               <option value="Fajr">Fajr</option>
-              <option value="Dhuhr">Dhuhr</option>
+              <option value="Zuhr">Zuhr</option>
               <option value="Asr">Asr</option>
               <option value="Maghrib">Maghrib</option>
               <option value="Isha">Isha</option>

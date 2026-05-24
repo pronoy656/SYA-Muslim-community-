@@ -16,7 +16,7 @@ const MapPicker = dynamic(() => import("@/components/MapPicker"), { ssr: false }
 
 interface PrayerTimes {
   fajr: string;
-  dhuhr: string;
+  zuhr: string;
   asr: string;
   maghrib: string;
   isha: string;
@@ -43,7 +43,7 @@ interface Mosque {
 
 const PRAYER_LABELS = [
   { key: "fajr",    label: "Fajr" },
-  { key: "dhuhr",  label: "Dhuhr" },
+  { key: "zuhr",    label: "Zuhr" },
   { key: "asr",    label: "Asr" },
   { key: "maghrib",label: "Maghrib" },
   { key: "isha",   label: "Isha" },
@@ -52,7 +52,7 @@ const PRAYER_LABELS = [
 
 const PRAYER_COLORS: Record<string, string> = {
   fajr:    "bg-sky-50 text-sky-600",
-  dhuhr:   "bg-amber-50 text-amber-600",
+  zuhr:    "bg-amber-50 text-amber-600",
   asr:     "bg-orange-50 text-orange-500",
   maghrib: "bg-rose-50 text-rose-500",
   isha:    "bg-indigo-50 text-indigo-600",
@@ -135,7 +135,7 @@ function MosqueDialog({ onClose, onSave, editingItem }: {
   const [phone, setPhone] = useState(editingItem?.phoneNumber || "");
   const [website, setWebsite] = useState(editingItem?.website || "");
   const [pt, setPt] = useState<PrayerTimes>(
-    editingItem?.prayerTimes || { fajr: "", dhuhr: "", asr: "", maghrib: "", isha: "", jummah: "" }
+    editingItem?.prayerTimes || { fajr: "", zuhr: "", asr: "", maghrib: "", isha: "", jummah: "" }
   );
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>(editingItem?.image || "");
