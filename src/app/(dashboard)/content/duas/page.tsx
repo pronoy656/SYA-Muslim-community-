@@ -4,7 +4,7 @@ import {
   Plus, X, MapPin, Calendar, User, Mic,
   Play, Edit2, Trash2, Upload, FileAudio,
   Clock, AlertTriangle, FileImage, Loader2,
-  Pause, RotateCcw, RotateCw, Heart, Music
+  Pause, RotateCcw, RotateCw, HandHeart, Music
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axiosSecure from "@/lib/axiosSecure";
@@ -127,7 +127,7 @@ function DuaDialog({ onClose, onSave, editingItem }: {
         <div className="px-8 py-5 space-y-4 overflow-y-auto flex-1">
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-              <Heart className="h-4 w-4 text-[#C4A052]" /> Dua Title
+              <HandHeart className="h-4 w-4 text-[#C4A052]" /> Dua Title
             </label>
             <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Dua for waking up" className={inputClass} />
           </div>

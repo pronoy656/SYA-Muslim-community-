@@ -24,7 +24,7 @@ import {
   LogOut,
   Lock,
   Scale,
-  Heart,
+  HandHeart,
 } from "lucide-react";
 
 /* ── Types ──────────────────────────────────────────────────────── */
@@ -61,7 +61,7 @@ const navTree: NavItem[] = [
     children: [
       { type: "leaf", href: "/content/learning", label: "Learning", Icon: BookOpen },
       { type: "leaf", href: "/content/jumma-khutbah", label: "Jummah Khutbah", Icon: Video },
-      { type: "leaf", href: "/content/duas", label: "Dua", Icon: Heart },
+      { type: "leaf", href: "/content/duas", label: "Salah & Dua", Icon: HandHeart },
     ],
   },
 
