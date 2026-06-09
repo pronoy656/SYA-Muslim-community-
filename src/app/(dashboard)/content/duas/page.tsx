@@ -341,12 +341,6 @@ function DuaCard({ dua, onDelete, onEdit, isPlaying, onPlayToggle }: {
   );
 }
 
-const Badge = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2", className)}>
-      {children}
-    </span>
-);
-
 /* ── Main Page ─────────────────────────────────────────────────── */
 export default function DuasPage() {
   const [duas, setDuas] = useState<Dua[]>([]);
@@ -411,17 +405,16 @@ export default function DuasPage() {
       )}
 
       {/* Header */}
-      <div className="border-b border-[#EAE3D5] pb-6">
-        <h1 className="text-3xl font-normal text-slate-800 tracking-wider uppercase">
-          Daily Duas Management
-        </h1>
-        <p className="text-slate-500 mt-2 text-sm font-sans">
-          Curate and manage essential spiritual supplications for the community
-        </p>
-      </div>
+      <div className="border-b border-[#EAE3D5] pb-6 flex items-end justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-normal text-slate-800 tracking-wider uppercase">
+            Daily Duas Management
+          </h1>
+          <p className="text-slate-500 mt-2 text-sm font-sans">
+            Curate and manage essential spiritual supplications for the community
+          </p>
+        </div>
 
-      {/* Add button */}
-      <div className="flex items-center justify-end">
         <button
           onClick={() => setShowDialog(true)}
           className="flex items-center gap-2 px-5 py-3 bg-[#C4A052] hover:bg-[#A8873A] text-white text-sm font-semibold rounded-2xl shadow-sm transition-all font-sans"
