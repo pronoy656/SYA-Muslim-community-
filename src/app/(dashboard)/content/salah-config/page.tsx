@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Book, ChevronDown, ChevronUp, Info, 
-  Clock, Edit2, Trash2, Play, Loader2, Search, Hash
+  Clock, Edit2, Play, Loader2, Search, Hash, Save, CheckCircle2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axiosSecure from "@/lib/axiosSecure";
@@ -66,7 +66,15 @@ const Badge = ({ children, className }: { children: React.ReactNode; className?:
 );
 
 /* ── Rakat Section ────────────────────────────────────────────── */
-function RakatSection({ rakat, isEditing }: { rakat: Rakat; isEditing: boolean }) {
+function RakatSection({ 
+  rakat, 
+  isEditing, 
+  onSurahChange 
+}: { 
+  rakat: Rakat; 
+  isEditing: boolean;
+  onSurahChange: (surahNumber: number) => void;
+}) {
   const [surahNumber, setSurahNumber] = useState(rakat.surahNumber);
   const [searchQuery, setSearchQuery] = useState("");
   const [surahList, setSurahList] = useState<Surah[]>([]);
@@ -110,6 +118,12 @@ function RakatSection({ rakat, isEditing }: { rakat: Rakat; isEditing: boolean }
      setSurahNumber(surah.id);
      setSearchQuery(surah.nameSimple);
      setShowDropdown(false);
+     onSurahChange(surah.id);
+   };
+
+   const handleNumberChange = (num: number) => {
+     setSurahNumber(num);
+     onSurahChange(num);
    };
 
    return (
@@ -145,7 +159,7 @@ function RakatSection({ rakat, isEditing }: { rakat: Rakat; isEditing: boolean }
              <input 
                type="number" 
                value={surahNumber}
-               onChange={(e) => setSurahNumber(parseInt(e.target.value) || 0)}
+               onChange={(e) => handleNumberChange(parseInt(e.target.value) || 0)}
                placeholder="e.g. 112" 
                className="w-full px-4 py-2.5 rounded-xl border border-[#E0D4BC] bg-[#FCFAF8] text-slate-800 text-xs placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C4A052]/40 focus:border-[#C4A052] transition-all font-sans"
              />
@@ -257,12 +271,44 @@ function RakatSection({ rakat, isEditing }: { rakat: Rakat; isEditing: boolean }
 }
 
 /* ── Salah Config Card ────────────────────────────────────────── */
-function SalahConfigCard({ config, onDelete }: { 
+function SalahConfigCard({ config, onUpdate }: { 
   config: SalahConfig; 
-  onDelete: () => void;
+  onUpdate: (updatedConfig: SalahConfig) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editedRakats, setEditedRakats] = useState(config.rakats);
+
+  const handleSurahChange = (rakatNumber: number, surahNumber: number) => {
+    setEditedRakats(prev => prev.map(r => 
+      r.rakat === rakatNumber ? { ...r, surahNumber } : r
+    ));
+  };
+
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      const payload = {
+        rakats: editedRakats.map(r => ({
+          rakat: r.rakat,
+          surahNumber: r.surahNumber
+        }))
+      };
+
+      const response = await axiosSecure.put(`/namaz/salah-config/${config.salahType}`, payload);
+      
+      if (response.data.success) {
+        toast.success(`${config.salahType} Salah config saved successfully`);
+        onUpdate(response.data.data);
+        setIsEditing(false);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to save configuration");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="bg-white border border-[#EAE3D5] rounded-[2.5rem] shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden font-sans group">
@@ -294,18 +340,11 @@ function SalahConfigCard({ config, onDelete }: {
               onClick={(e) => { e.stopPropagation(); setIsEditing(!isEditing); if(!isExpanded) setIsExpanded(true); }}
               className={cn(
                 "h-10 w-10 flex items-center justify-center rounded-xl transition-all shadow-sm",
-                isEditing ? "bg-[#C4A052] text-white" : "bg-slate-50 text-slate-400 hover:bg-[#C4A052] hover:text-white"
+                isEditing ? "bg-amber-100 text-[#C4A052] border border-[#C4A052]" : "bg-slate-50 text-slate-400 hover:bg-[#C4A052] hover:text-white"
               )}
               title={isEditing ? "Save Config" : "Edit Config"}
             >
               <Edit2 className="h-4 w-4" />
-            </button>
-            <button 
-              onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              className="h-10 w-10 flex items-center justify-center rounded-xl bg-red-50 text-red-400 hover:bg-red-500 hover:text-white transition-all shadow-sm"
-              title="Delete Config"
-            >
-              <Trash2 className="h-4 w-4" />
             </button>
             <button 
               onClick={() => setIsExpanded(!isExpanded)}
@@ -326,9 +365,37 @@ function SalahConfigCard({ config, onDelete }: {
           
           <div className="space-y-10">
             {config.rakats.map((rakat, idx) => (
-              <RakatSection key={idx} rakat={rakat} isEditing={isEditing} />
+              <RakatSection 
+                key={idx} 
+                rakat={rakat} 
+                isEditing={isEditing} 
+                onSurahChange={(surahNumber) => handleSurahChange(rakat.rakat, surahNumber)}
+              />
             ))}
           </div>
+
+          {/* Save Button - Only visible in edit mode */}
+          {isEditing && (
+            <div className="flex justify-center pt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="flex items-center gap-2 px-10 py-4 bg-[#C4A052] hover:bg-[#A8873A] text-white font-bold rounded-2xl shadow-xl transition-all transform hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-sm"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-5 w-5" />
+                    Save {config.salahType} Configuration
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -349,6 +416,12 @@ export default function SalahConfigPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleUpdateConfig = (updatedConfig: SalahConfig) => {
+    setSalahConfigs(prev => prev.map(c => 
+      c.salahType === updatedConfig.salahType ? updatedConfig : c
+    ));
   };
 
   useEffect(() => {
@@ -383,7 +456,7 @@ export default function SalahConfigPage() {
               <SalahConfigCard 
                 key={config.id} 
                 config={config} 
-                onDelete={() => toast.info(`Deleting ${config.salahType} Salah config...`)}
+                onUpdate={handleUpdateConfig}
               />
             ))
           )}
