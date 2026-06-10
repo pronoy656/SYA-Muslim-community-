@@ -1,8 +1,9 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Book, ChevronDown, ChevronUp, Info, 
-  Clock, Edit2, Play, Loader2, Search, Hash, Save, CheckCircle2
+  Clock, Edit2, Play, Loader2, Search, Hash, Save, CheckCircle2,
+  Pause, Volume2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axiosSecure from "@/lib/axiosSecure";
@@ -34,21 +35,20 @@ interface SurahListResponse {
   };
 }
 
-interface WordByWord {
-  arabic: string;
+interface Verse {
+  verseNumber: number;
+  verseKey: string;
+  arabicText: string;
   transliteration: string;
-  meaning: string;
+  translation: string;
+  audioUrl: string | null;
 }
 
 interface Rakat {
   rakat: number;
   surahNumber: number;
   surahName: string;
-  arabicText: string;
-  transliteration: string;
-  translation: string;
-  wordByWord: WordByWord[];
-  audioUrl: string | null;
+  verses: Verse[];
 }
 
 interface SalahConfig {
@@ -80,11 +80,52 @@ function RakatSection({
   const [surahList, setSurahList] = useState<Surah[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [playingVerseKey, setPlayingVerseKey] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   
   const debouncedSearch = useDebounce(searchQuery, 400);
 
   useEffect(() => {
-     const words = debouncedSearch.trim().split(/\s+/);
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  const handlePlayToggle = (verse: Verse) => {
+    if (playingVerseKey === verse.verseKey) {
+      // Already playing this verse, so pause it
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      setPlayingVerseKey(null);
+    } else {
+      // Playing a new verse or nothing was playing
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      
+      if (verse.audioUrl) {
+        audioRef.current = new Audio(verse.audioUrl);
+        audioRef.current.play().catch(e => {
+          console.error("Failed to play audio", e);
+          toast.error("Failed to play recitation");
+          setPlayingVerseKey(null);
+        });
+        
+        audioRef.current.onended = () => {
+          setPlayingVerseKey(null);
+        };
+        
+        setPlayingVerseKey(verse.verseKey);
+      }
+    }
+  };
+
+  useEffect(() => {
+      const words = debouncedSearch.trim().split(/\s+/);
      if (debouncedSearch.trim().length >= 3 || words.length >= 2) {
        fetchSurahs(debouncedSearch);
      } else {
@@ -142,11 +183,6 @@ function RakatSection({
              Surah Number: {rakat.surahNumber}
            </p>
          </div>
-         {rakat.audioUrl && (
-           <button className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-100 transition-colors">
-             <Play className="h-3 w-3 fill-emerald-600" /> Play Recitation
-           </button>
-         )}
        </div>
 
        {/* Input Fields for Surah Number and Search - Only visible in editing mode */}
@@ -218,56 +254,102 @@ function RakatSection({
          </div>
        )}
 
-      <div className="bg-[#FCFAF8]/50 border border-[#EAE3D5] rounded-[2rem] p-7 space-y-6 hover:bg-white hover:shadow-md transition-all duration-300">
-        {/* Arabic Text Display */}
-        <div className="text-right py-4">
-          <p className="text-3xl font-bold text-slate-800 leading-[3rem] font-sans" dir="rtl">
-            {rakat.arabicText}
-          </p>
-        </div>
-
-        {/* Transliteration & Translation Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4 border-t border-[#EAE3D5]/40">
-          <div className="space-y-2">
-            <span className="text-[9px] font-bold text-[#C4A052] uppercase tracking-[0.2em]">Transliteration</span>
-            <p className="text-sm text-slate-700 font-medium italic leading-relaxed">
-              {rakat.transliteration}
-            </p>
-          </div>
-          <div className="space-y-2">
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">Translation</span>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              {rakat.translation}
-            </p>
-          </div>
-        </div>
-
-        {/* Word by Word Analysis */}
-        <div className="pt-6 border-t border-[#EAE3D5]/40">
-          <div className="flex items-center gap-2 mb-5">
-            <div className="h-6 w-6 rounded-lg bg-[#F4EFE6] flex items-center justify-center">
-              <Info className="h-3 w-3 text-[#C4A052]" />
-            </div>
-            <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-              Word by Word Breakdown
-            </h5>
-          </div>
+       <div className="space-y-4">
+        {rakat.verses.map((verse) => {
+          const isPlaying = playingVerseKey === verse.verseKey;
           
-          <div className="flex flex-wrap gap-4">
-            {rakat.wordByWord.map((word, wIdx) => (
-              <div key={wIdx} className="bg-white border border-[#EAE3D5] rounded-2xl p-3 text-center min-w-[80px] hover:border-[#C4A052] transition-colors group/word shadow-sm">
-                <p className="text-xl font-bold text-slate-800 mb-1 group-hover/word:text-[#C4A052] transition-colors" dir="rtl">{word.arabic}</p>
-                <div className="space-y-0.5">
-                  <p className="text-[9px] text-[#C4A052] font-bold uppercase tracking-tighter">{word.transliteration}</p>
-                  <p className="text-[10px] text-slate-400 font-medium italic">{word.meaning}</p>
+          return (
+            <div 
+              key={verse.verseKey} 
+              className={cn(
+                "border rounded-[2rem] p-7 space-y-6 transition-all duration-500 relative overflow-hidden",
+                isPlaying 
+                  ? "bg-white border-[#C4A052] shadow-lg scale-[1.01] z-10" 
+                  : "bg-[#FCFAF8]/50 border-[#EAE3D5] hover:bg-white hover:shadow-md"
+              )}
+            >
+              {/* Playing indicator background glow */}
+              {isPlaying && (
+                <div className="absolute top-0 left-0 w-1 h-full bg-[#C4A052] animate-pulse" />
+              )}
+
+              {/* Verse Header with Number and Audio */}
+              <div className="flex items-center justify-between border-b border-[#EAE3D5]/40 pb-4">
+                <div className="flex items-center gap-3">
+                  <span className={cn(
+                    "h-8 w-8 rounded-lg text-xs font-bold flex items-center justify-center transition-colors duration-500",
+                    isPlaying ? "bg-[#C4A052] text-white shadow-md shadow-[#C4A052]/20" : "bg-[#F4EFE6] text-[#C4A052]"
+                  )}>
+                    {verse.verseNumber}
+                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      Verse {verse.verseKey}
+                    </span>
+                    {isPlaying && (
+                      <span className="text-[9px] font-bold text-[#C4A052] uppercase animate-pulse">
+                        Currently Playing
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {verse.audioUrl && (
+                  <button 
+                    onClick={() => handlePlayToggle(verse)}
+                    className={cn(
+                      "h-10 w-10 flex items-center justify-center rounded-full transition-all duration-300 shadow-sm",
+                      isPlaying 
+                        ? "bg-[#C4A052] text-white rotate-180" 
+                        : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                    )}
+                    title={isPlaying ? "Pause Recitation" : "Play Verse Recitation"}
+                  >
+                    {isPlaying ? (
+                      <Pause className="h-4 w-4 fill-white" />
+                    ) : (
+                      <Play className="h-4 w-4 fill-emerald-600 ml-0.5" />
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {/* Arabic Text Display */}
+              <div className="text-right">
+                <p className={cn(
+                  "text-3xl font-bold leading-[3.5rem] font-sans transition-colors duration-500",
+                  isPlaying ? "text-slate-900" : "text-slate-800"
+                )} dir="rtl">
+                  {verse.arabicText}
+                </p>
+              </div>
+
+              {/* Transliteration & Translation Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4 border-t border-[#EAE3D5]/40">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-bold text-[#C4A052] uppercase tracking-[0.2em]">Transliteration</span>
+                    {isPlaying && <Volume2 className="h-3 w-3 text-[#C4A052] animate-bounce" />}
+                  </div>
+                  <p className={cn(
+                    "text-sm font-medium italic leading-relaxed transition-colors duration-500",
+                    isPlaying ? "text-[#C4A052]" : "text-slate-700"
+                  )}>
+                    {verse.transliteration}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">Translation</span>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    {verse.translation}
+                  </p>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          );
+        })}
       </div>
-    </div>
-  );
+     </div>
+   );
 }
 
 /* ── Salah Config Card ────────────────────────────────────────── */
