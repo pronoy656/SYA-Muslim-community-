@@ -291,6 +291,43 @@ function LearningDialog({ onClose, onSave, editingItem }: {
   );
 }
 
+/* ── Learn Surah Dialog ────────────────────────────────────────── */
+function LearnSurahDialog({ onClose }: { onClose: () => void }) {
+  const [searchText, setSearchText] = useState("");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden font-sans max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="px-8 pt-8 pb-4 flex items-start justify-between shrink-0">
+          <div>
+            <h2 className="text-xl font-bold text-slate-800 font-cinzel tracking-wide">
+           Add Learn Surah
+            </h2>
+          </div>
+          <button onClick={onClose} className="text-slate-300 hover:text-slate-500 transition-colors ml-4 shrink-0">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Form */}
+        <div className="px-8 pb-8 space-y-5 overflow-y-auto flex-1">
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700 block">Search Surah</label>
+            <input
+              type="search"
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)}
+              placeholder="Type surah name..."
+              className="w-full px-4 py-3.5 rounded-2xl border border-[#E0D4BC] bg-[#FAF7F2] text-slate-800 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C4A052]/40 focus:border-[#C4A052] transition-all font-sans"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Video Player Modal ────────────────────────────────────────── */
 function VideoModal({ url, title, onClose }: { url: string; title: string; onClose: () => void }) {
   return (
@@ -427,6 +464,7 @@ export default function LearningPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [playingVideo, setPlayingVideo] = useState<LearningContent | null>(null);
+  const [showLearnSurahDialog, setShowLearnSurahDialog] = useState(false);
 
   const fetchLearningContents = async () => {
     try {
@@ -472,6 +510,10 @@ export default function LearningPage() {
         />
       )}
 
+      {showLearnSurahDialog && (
+        <LearnSurahDialog onClose={() => setShowLearnSurahDialog(false)} />
+      )}
+
       {deletingId && deletingItem && (
         <DeleteDialog
           title={deletingItem.title}
@@ -504,13 +546,21 @@ export default function LearningPage() {
             Manage educational videos and Islamic knowledge content
           </p>
         </div>
-        <button
-          onClick={() => setShowDialog(true)}
-          className="flex items-center gap-2 px-5 py-3 bg-[#C4A052] hover:bg-[#A8873A] text-white text-sm font-semibold rounded-2xl shadow-sm transition-all font-sans shrink-0"
-        >
-          <Plus className="h-4 w-4" />
-          New Learning
-        </button>
+        <div className="flex items-center gap-3 shrink-0">
+          <button
+            onClick={() => setShowLearnSurahDialog(true)}
+            className="flex items-center gap-2 px-5 py-3 bg-[#FAF7F2] border border-[#EAE3D5] hover:bg-[#E8DCC8] text-slate-800 text-sm font-semibold rounded-2xl transition-all font-sans"
+          >
+           Add Learn Surah
+          </button>
+          <button
+            onClick={() => setShowDialog(true)}
+            className="flex items-center gap-2 px-5 py-3 bg-[#C4A052] hover:bg-[#A8873A] text-white text-sm font-semibold rounded-2xl shadow-sm transition-all font-sans"
+          >
+            <Plus className="h-4 w-4" />
+            New Learning
+          </button>
+        </div>
       </div>
 
       {/* Stats row */}
